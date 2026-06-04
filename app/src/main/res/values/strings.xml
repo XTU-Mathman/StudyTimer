@@ -1,0 +1,15 @@
+<resources>
+    <!-- App 名称 -->
+    <string name="app_name">时矩</string>
+
+    <!-- 底部导航按钮文字 -->
+    <string name="nav_todo">待办</string>
+    <string name="nav_timer">计时</string>
+    <string name="nav_stats">统计</string>
+    <string name="nav_profile">我的</string>
+
+    <!-- 页面标题占位 -->
+    <string name="page_todo">待办事项</string>
+    <string name="page_timer">计时</string>
+    <string name="page_stats">统计数据</string>
+</resources>

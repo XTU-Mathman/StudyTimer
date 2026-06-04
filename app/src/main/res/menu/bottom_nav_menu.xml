@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 底部导航栏的三个按钮定义 -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 待办按钮 -->
+    <item
+        android:id="@+id/nav_todo"
+        android:icon="@drawable/ic_todo"
+        android:title="@string/nav_todo" />
+
+    <!-- 计时按钮 -->
+    <item
+        android:id="@+id/nav_timer"
+        android:icon="@drawable/ic_timer"
+        android:title="@string/nav_timer" />
+
+    <!-- 统计按钮 -->
+    <item
+        android:id="@+id/nav_stats"
+        android:icon="@drawable/ic_stats"
+        android:title="@string/nav_stats" />
+
+    <!-- 我的按钮 -->
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="@string/nav_profile" />
+
+</menu>

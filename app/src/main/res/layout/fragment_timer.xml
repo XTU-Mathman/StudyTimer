@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 计时主页：科目选择 → 模式切换 → 开始按钮（跳转全屏计时页） -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- ===== 1. 科目选择区域 ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="选择计时科目"
+                android:textSize="16sp"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- 科目集选择 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="科目集"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="4dp" />
+
+            <Spinner
+                android:id="@+id/spinner_group"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@android:drawable/editbox_background"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- 具体科目选择 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="具体科目"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="4dp" />
+
+            <Spinner
+                android:id="@+id/spinner_subject"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@android:drawable/editbox_background"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+        <!-- ===== 2. 模式选择按钮 ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btn_count_up"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="正计时"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btn_count_down"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="倒计时"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+        <!-- ===== 3. 正计时「开始计时」按钮 ===== -->
+        <Button
+            android:id="@+id/btn_start_timer"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:text="开始计时"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <!-- ===== 4. 倒计时区域（默认隐藏） ===== -->
+        <LinearLayout
+            android:id="@+id/layout_countdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设置目标时长"
+                android:textSize="16sp"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <!-- 小时输入 -->
+                <EditText
+                    android:id="@+id/et_hours"
+                    android:layout_width="80dp"
+                    android:layout_height="48dp"
+                    android:inputType="number"
+                    android:maxLength="3"
+                    android:text="1"
+                    android:textSize="20sp"
+                    android:textColor="@color/text_primary"
+                    android:gravity="center"
+                    android:background="@android:drawable/editbox_background" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="小时"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary"
+                    android:paddingHorizontal="8dp" />
+
+                <!-- 分钟输入 -->
+                <EditText
+                    android:id="@+id/et_minutes"
+                    android:layout_width="80dp"
+                    android:layout_height="48dp"
+                    android:inputType="number"
+                    android:maxLength="2"
+                    android:text="30"
+                    android:textSize="20sp"
+                    android:textColor="@color/text_primary"
+                    android:gravity="center"
+                    android:background="@android:drawable/editbox_background" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="分钟"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary"
+                    android:paddingHorizontal="8dp" />
+
+            </LinearLayout>
+
+            <!-- 开始倒计时按钮 -->
+            <Button
+                android:id="@+id/btn_start_countdown"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="开始倒计时"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

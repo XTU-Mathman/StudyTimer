@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 统计图标：柱状图样式（24x24dp矢量图） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 底部横轴 -->
+    <path
+        android:fillColor="#FF999999"
+        android:pathData="M3,20h18v2H3z" />
+
+    <!-- 第一根柱子（低） -->
+    <path
+        android:fillColor="#FF81B7E0"
+        android:pathData="M5,13h4v7H5z" />
+
+    <!-- 第二根柱子（高） -->
+    <path
+        android:fillColor="#FF81B7E0"
+        android:pathData="M10,8h4v12h-4z" />
+
+    <!-- 第三根柱子（中） -->
+    <path
+        android:fillColor="#FF81B7E0"
+        android:pathData="M15,11h4v9h-4z" />
+
+</vector>

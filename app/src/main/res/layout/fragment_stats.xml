@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 统计页面：日/周/月 切换 → 日期选择 → 科目时长列表 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background_light">
+
+    <!-- ===== 1. 日/周/月 切换标签 ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btn_day"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="每日"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btn_week"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="每周"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btn_month"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="每月"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <!-- ===== 2. 日期选择栏 ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="@color/background_white">
+
+        <!-- 上一天/周/月 -->
+        <TextView
+            android:id="@+id/btn_prev"
+            android:layout_width="48dp"
+            android:layout_height="36dp"
+            android:text="◀"
+            android:textSize="18sp"
+            android:textColor="@color/text_primary"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground" />
+
+        <!-- 日期显示（点击弹出日历选择器） -->
+        <TextView
+            android:id="@+id/tv_date_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="2026-05-30"
+            android:textSize="16sp"
+            android:textColor="@color/blue_primary"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground" />
+
+        <!-- 下一天/周/月 -->
+        <TextView
+            android:id="@+id/btn_next"
+            android:layout_width="48dp"
+            android:layout_height="36dp"
+            android:text="▶"
+            android:textSize="18sp"
+            android:textColor="@color/text_primary"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground" />
+
+    </LinearLayout>
+
+    <!-- ===== 3. 总时长汇总 ===== -->
+    <TextView
+        android:id="@+id/tv_total_duration"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="12dp"
+        android:text="总计：0 分钟"
+        android:textSize="16sp"
+        android:textColor="@color/blue_primary"
+        android:textStyle="bold" />
+
+    <!-- 分割线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#FFE0E0E0" />
+
+    <!-- ===== 4. 统计内容（可滚动，含图表+列表） ===== -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/layout_stats_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 扇形图容器 -->
+            <LinearLayout
+                android:id="@+id/chart_pie_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:background="@color/background_white"
+                android:layout_marginBottom="8dp" />
+
+            <!-- 折线图容器（每日模式隐藏） -->
+            <LinearLayout
+                android:id="@+id/chart_line_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:background="@color/background_white"
+                android:layout_marginBottom="8dp" />
+
+            <!-- 科目列表容器 -->
+            <LinearLayout
+                android:id="@+id/layout_stats_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>
