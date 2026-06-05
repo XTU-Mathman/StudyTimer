@@ -21,13 +21,17 @@ class LineChartView @JvmOverloads constructor(
 
     // ==================== 画笔 ====================
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FF81B7E0")  // 淡蓝色折线
-        strokeWidth = 4f
+        color = Color.parseColor("#FF6B9FC7")  // 雾蓝折线
+        strokeWidth = 6f
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
     }
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FF81B7E0")
+        color = Color.parseColor("#FF6B9FC7")
         style = Paint.Style.FILL
     }
     private val dotStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -128,6 +132,27 @@ class LineChartView @JvmOverloads constructor(
             }
             val y = chartBottom - (data[i].second.toFloat() / yMax * chartHeight)
             points.add(x to y)
+        }
+
+        // ---------- 绘制渐变填充区域（折线下方） ----------
+        if (points.size >= 2) {
+            val fillPath = Path()
+            fillPath.moveTo(points[0].first, chartBottom)
+            fillPath.lineTo(points[0].first, points[0].second)
+            for (i in 1 until points.size) {
+                fillPath.lineTo(points[i].first, points[i].second)
+            }
+            fillPath.lineTo(points.last().first, chartBottom)
+            fillPath.close()
+
+            val gradient = LinearGradient(
+                0f, chartTop, 0f, chartBottom,
+                Color.parseColor("#406B9FC7"),  // 蓝色半透明
+                Color.parseColor("#086B9FC7"),  // 几乎透明
+                Shader.TileMode.CLAMP
+            )
+            fillPaint.shader = gradient
+            canvas.drawPath(fillPath, fillPaint)
         }
 
         // ---------- 绘制折线 ----------

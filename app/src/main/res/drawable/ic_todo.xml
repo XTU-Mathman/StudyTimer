@@ -28,7 +28,7 @@
 
     <!-- 右下角的对勾（表示已完成项） -->
     <path
-        android:fillColor="#FF81B7E0"
+        android:fillColor="#FF6B9FC7"
         android:pathData="M17,13l-3,3 -1,-1 -1,1 2,2 4,-4z" />
 
 </vector>

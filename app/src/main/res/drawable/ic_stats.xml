@@ -13,17 +13,17 @@
 
     <!-- 第一根柱子（低） -->
     <path
-        android:fillColor="#FF81B7E0"
+        android:fillColor="#FF6B9FC7"
         android:pathData="M5,13h4v7H5z" />
 
     <!-- 第二根柱子（高） -->
     <path
-        android:fillColor="#FF81B7E0"
+        android:fillColor="#FF6B9FC7"
         android:pathData="M10,8h4v12h-4z" />
 
     <!-- 第三根柱子（中） -->
     <path
-        android:fillColor="#FF81B7E0"
+        android:fillColor="#FF6B9FC7"
         android:pathData="M15,11h4v9h-4z" />
 
 </vector>

@@ -9,6 +9,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -22,8 +23,8 @@ class TimerFragment : Fragment() {
     // ==================== 视图控件 ====================
     private lateinit var spinnerGroup: Spinner
     private lateinit var spinnerSubject: Spinner
-    private lateinit var btnCountUp: Button
-    private lateinit var btnCountDown: Button
+    private lateinit var btnCountUp: TextView
+    private lateinit var btnCountDown: TextView
     private lateinit var btnStartTimer: Button
     private lateinit var layoutCountdown: View
     private lateinit var etHours: EditText
@@ -93,18 +94,25 @@ class TimerFragment : Fragment() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        // 正计时模式
+        // 分段控件：正计时 / 倒计时
         btnCountUp.setOnClickListener {
             isCountUpMode = true
             btnStartTimer.visibility = View.VISIBLE
             layoutCountdown.visibility = View.GONE
+            btnCountUp.background = resources.getDrawable(R.drawable.bg_segment_left_selected, null)
+            btnCountUp.setTextColor(resources.getColor(R.color.white, null))
+            btnCountDown.background = resources.getDrawable(R.drawable.bg_segment_right, null)
+            btnCountDown.setTextColor(resources.getColor(R.color.blue_primary, null))
         }
 
-        // 倒计时模式
         btnCountDown.setOnClickListener {
             isCountUpMode = false
             btnStartTimer.visibility = View.GONE
             layoutCountdown.visibility = View.VISIBLE
+            btnCountDown.background = resources.getDrawable(R.drawable.bg_segment_right_selected, null)
+            btnCountDown.setTextColor(resources.getColor(R.color.white, null))
+            btnCountUp.background = resources.getDrawable(R.drawable.bg_segment_left, null)
+            btnCountUp.setTextColor(resources.getColor(R.color.blue_primary, null))
         }
 
         // 正计时 → 跳转

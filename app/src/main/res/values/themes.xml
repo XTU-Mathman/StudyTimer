@@ -1,18 +1,30 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- App 基础主题：淡蓝色系 -->
+    <!-- 日间主题：雾蓝 + 暖灰，简约高级 -->
     <style name="Base.Theme.时矩" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- 主色：淡蓝色 -->
+        <!-- 主色：雾蓝 -->
         <item name="colorPrimary">@color/blue_primary</item>
-        <!-- 主色上面的文字颜色（白色） -->
         <item name="colorOnPrimary">@color/white</item>
-        <!-- 主色的浅色容器 -->
-        <item name="colorPrimaryContainer">@color/blue_primary_light</item>
-        <!-- 浅色容器上的文字 -->
+        <item name="colorPrimaryContainer">@color/blue_pale</item>
         <item name="colorOnPrimaryContainer">@color/text_primary</item>
-        <!-- 页面背景色 -->
-        <item name="android:colorBackground">@color/background_light</item>
-        <!-- 卡片/表面背景色 -->
+
+        <!-- 次要色：淡紫灰 -->
+        <item name="colorSecondary">@color/text_secondary</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#FFF3F4F6</item>
+        <item name="colorOnSecondaryContainer">@color/text_primary</item>
+
+        <!-- 页面背景 -->
+        <item name="android:colorBackground">@color/bg_page</item>
         <item name="colorSurface">@color/background_white</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+
+        <!-- 错误色 -->
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/white</item>
+
+        <!-- Material3 组件微调 -->
+        <item name="colorOutline">#FFE5E7EB</item>
+        <item name="colorSurfaceVariant">#FFF2F3F5</item>
     </style>
 
     <style name="Theme.时矩" parent="Base.Theme.时矩" />

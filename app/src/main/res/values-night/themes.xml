@@ -1,9 +1,25 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- 夜间模式主题：使用稍暗的蓝色 -->
+    <!-- 暗色主题：深灰底 + 雾蓝点缀 -->
     <style name="Base.Theme.时矩" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/blue_primary_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorPrimaryContainer">@color/blue_primary</item>
-        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorPrimary">#FF8BB8D9</item>
+        <item name="colorOnPrimary">#FF1A1A2E</item>
+        <item name="colorPrimaryContainer">#FF2A4A62</item>
+        <item name="colorOnPrimaryContainer">#FFC8DFEF</item>
+
+        <item name="colorSecondary">#FF9CA3AF</item>
+        <item name="colorOnSecondary">#FF1A1A2E</item>
+        <item name="colorSecondaryContainer">#FF2D2D3A</item>
+        <item name="colorOnSecondaryContainer">#FFD4D4DC</item>
+
+        <!-- 暗色背景 -->
+        <item name="android:colorBackground">#FF1A1A2E</item>
+        <item name="colorSurface">#FF242438</item>
+        <item name="colorOnSurface">#FFE8E8EE</item>
+
+        <item name="colorError">#FFFF6B6B</item>
+        <item name="colorOnError">#FF1A1A2E</item>
+
+        <item name="colorOutline">#FF3A3A4E</item>
+        <item name="colorSurfaceVariant">#FF2A2A3E</item>
     </style>
 </resources>

@@ -15,17 +15,17 @@ class PieChartView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    // ==================== 颜色调色板 ====================
-    // 柔和配色，区分不同科目，不刺眼
+    // ==================== 渐变色调色板 ====================
+    // 蓝→紫→粉→橙→绿：相邻色相渐变，视觉连贯
     private val colors = listOf(
-        Color.parseColor("#FF81B7E0"),  // 淡蓝
-        Color.parseColor("#FFFFB74D"),  // 暖橙
-        Color.parseColor("#FFAED581"),  // 柔绿
-        Color.parseColor("#FFE57373"),  // 浅红
-        Color.parseColor("#FF64B5F6"),  // 天蓝
-        Color.parseColor("#FFBA68C8"),  // 淡紫
-        Color.parseColor("#FF4DB6AC"),  // 青绿
-        Color.parseColor("#FFFF8A65")   // 深橙
+        Color.parseColor("#FF6B9FC7"),  // 雾蓝
+        Color.parseColor("#FF8B7EC8"),  // 靛紫
+        Color.parseColor("#FFB07CC8"),  // 淡紫
+        Color.parseColor("#FFD489B5"),  // 粉紫
+        Color.parseColor("#FFE8A87C"),  // 暖橙
+        Color.parseColor("#FF7DB89A"),  // 柔绿
+        Color.parseColor("#FF6BB5B5"),  // 青绿
+        Color.parseColor("#FFA8CBE3")   // 浅蓝
     )
 
     // ==================== 数据 ====================

@@ -10,6 +10,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.google.android.material.button.MaterialButtonToggleGroup
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -82,10 +83,17 @@ class StatsFragment : Fragment() {
         }
         chartLineContainer.addView(lineChart)
 
-        // ---------- 3. 模式切换 ----------
-        btnDay.setOnClickListener { switchMode("day") }
-        btnWeek.setOnClickListener { switchMode("week") }
-        btnMonth.setOnClickListener { switchMode("month") }
+        // ---------- 3. 模式切换（分段控件） ----------
+        val togglePeriod = view.findViewById<MaterialButtonToggleGroup>(R.id.toggle_period)
+        togglePeriod.addOnButtonCheckedListener { group, checkedId, isChecked ->
+            if (isChecked) {
+                when (checkedId) {
+                    R.id.btn_day -> switchMode("day")
+                    R.id.btn_week -> switchMode("week")
+                    R.id.btn_month -> switchMode("month")
+                }
+            }
+        }
 
         // ---------- 4. 日期导航 ----------
         btnPrev.setOnClickListener { navigateDay(-1) }
@@ -95,6 +103,7 @@ class StatsFragment : Fragment() {
         tvDateLabel.setOnClickListener { showDatePicker() }
 
         // ---------- 5. 首次加载 ----------
+        togglePeriod.check(R.id.btn_day)
         switchMode("day")
     }
 
@@ -104,13 +113,6 @@ class StatsFragment : Fragment() {
     private fun switchMode(mode: String) {
         currentMode = mode
         currentCalendar = Calendar.getInstance()  // 重置为今天
-
-        // 高亮选中的按钮（淡蓝色背景），其他恢复默认
-        val selectedColor = Color.parseColor("#FF81B7E0")
-        val defaultColor = Color.parseColor("#FFE0E0E0")
-        btnDay.setBackgroundColor(if (mode == "day") selectedColor else defaultColor)
-        btnWeek.setBackgroundColor(if (mode == "week") selectedColor else defaultColor)
-        btnMonth.setBackgroundColor(if (mode == "month") selectedColor else defaultColor)
 
         // 折线图：仅在周/月模式显示
         chartLineContainer.visibility = if (mode == "day") View.GONE else View.VISIBLE
@@ -365,7 +367,7 @@ class StatsFragment : Fragment() {
         val tvDuration = TextView(requireContext()).apply {
             text = formatDuration(seconds)
             textSize = 14f
-            setTextColor(Color.parseColor("#FF81B7E0"))
+            setTextColor(Color.parseColor("#FF6B9FC7"))
         }
         headerRow.addView(tvDuration)
         row.addView(headerRow)
@@ -385,7 +387,7 @@ class StatsFragment : Fragment() {
         val barWidth = (screenWidth * percent).toInt().coerceAtLeast(4)
 
         val bar = View(requireContext()).apply {
-            setBackgroundColor(Color.parseColor("#FF81B7E0"))
+            setBackgroundColor(Color.parseColor("#FF6B9FC7"))
             layoutParams = LinearLayout.LayoutParams(barWidth, 8)
         }
         barContainer.addView(bar)

@@ -146,19 +146,18 @@ class TodoFragment : Fragment() {
         contentRow.addView(tv)
 
         if (!item.isDone) {
-            val btnDone = makeBtn("完成", "#FF81C784") {
+            val btnDone = makeBtn("完成", "#FF6B9FC7") {
                 TodoStorage.markDone(requireContext(), item.id)
             }
             contentRow.addView(btnDone)
 
-            val btnDel = makeBtn("删除", "#FFE57373") {
+            val btnDel = makeBtn("删除", "#FFFF6B6B") {
                 TodoStorage.delete(requireContext(), item.id)
             }
-            // 先 addView 再设 margin（addView 后才会有有效的 layoutParams）
             contentRow.addView(btnDel)
             (btnDel.layoutParams as LinearLayout.LayoutParams).marginStart = 4
         } else {
-            val btnDel = makeBtn("删除", "#FFE57373") {
+            val btnDel = makeBtn("删除", "#FFFF6B6B") {
                 TodoStorage.delete(requireContext(), item.id)
             }
             contentRow.addView(btnDel)

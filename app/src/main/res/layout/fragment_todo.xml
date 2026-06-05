@@ -62,7 +62,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#FFE0E0E0" />
+        android:background="@color/blue_pale" />
 
     <!-- ===== 待办列表（可滚动） ===== -->
     <ScrollView

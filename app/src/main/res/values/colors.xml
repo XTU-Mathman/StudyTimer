@@ -1,20 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 基础色 -->
+    <!-- ============ 基础色 ============ -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- 淡蓝色主题色系 -->
-    <color name="blue_primary">#FF81B7E0</color>
-    <color name="blue_primary_dark">#FF5A9FCF</color>
-    <color name="blue_primary_light">#FFB3D8F0</color>
-    <color name="blue_accent">#FF6DB3D8</color>
+    <!-- ============ 主色：雾蓝 ============ -->
+    <color name="blue_primary">#FF6B9FC7</color>
+    <color name="blue_primary_dark">#FF4A7FA8</color>
+    <color name="blue_primary_light">#FFA8CBE3</color>
+    <color name="blue_pale">#FFE8F0F6</color>
 
-    <!-- 背景色 -->
-    <color name="background_light">#FFF5F9FC</color>
+    <!-- ============ 页面背景 ============ -->
+    <color name="bg_page">#FFF8F9FA</color>
+    <!-- 向下兼容旧引用名 -->
+    <color name="background_light">#FFF8F9FA</color>
     <color name="background_white">#FFFFFFFF</color>
 
-    <!-- 文字色 -->
-    <color name="text_primary">#FF333333</color>
-    <color name="text_secondary">#FF888888</color>
+    <!-- ============ 文字色（三级层次） ============ -->
+    <color name="text_primary">#FF1A1A1A</color>
+    <color name="text_secondary">#FF6B7280</color>
+    <color name="text_tertiary">#FF9CA3AF</color>
+
+    <!-- ============ 语义色 ============ -->
+    <color name="success">#FF34C759</color>
+    <color name="warning">#FFFF9F0A</color>
+    <color name="error">#FFFF3B30</color>
+
+    <!-- ============ 图表渐变色 ============ -->
+    <color name="chart_blue">#FF6B9FC7</color>
+    <color name="chart_indigo">#FF8B7EC8</color>
+    <color name="chart_purple">#FFB07CC8</color>
+    <color name="chart_pink">#FFD489B5</color>
+    <color name="chart_orange">#FFE8A87C</color>
+    <color name="chart_green">#FF7DB89A</color>
+    <color name="chart_teal">#FF6BB5B5</color>
 </resources>

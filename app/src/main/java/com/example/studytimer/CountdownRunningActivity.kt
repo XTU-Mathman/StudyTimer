@@ -1,5 +1,7 @@
 package com.example.studytimer
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Context
 import android.media.MediaPlayer
 import android.os.Build
@@ -9,6 +11,9 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -20,7 +25,8 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 全屏倒计时：时间戳差值计时，切后台不影响
+ * 全屏倒计时：时间戳差值计时，切后台不中断
+ * 高级简约风格 — 大数字 + 缩放动画 + 药丸按钮
  */
 class CountdownRunningActivity : AppCompatActivity() {
 
@@ -31,12 +37,15 @@ class CountdownRunningActivity : AppCompatActivity() {
     private lateinit var btnEnd: Button
 
     // 时间戳差值倒计时
-    private var targetMillis = 0L       // 目标总毫秒数
-    private var startTimestamp = 0L     // 本轮开始时间戳
-    private var pausedRemaining = 0L    // 暂停时剩余毫秒数
+    private var targetMillis = 0L
+    private var startTimestamp = 0L
+    private var pausedRemaining = 0L
     private var isPaused = false
     private var isFinished = false
-    private var finishedByUser = false   // saveAndFinish 已调用标记（防 onStop 重复触发）
+    private var finishedByUser = false
+
+    // 数字动画追踪
+    private var lastDisplayText = ""
 
     private var mediaPlayer: MediaPlayer? = null
     private val handler = Handler(Looper.getMainLooper())
@@ -50,7 +59,11 @@ class CountdownRunningActivity : AppCompatActivity() {
                     onTimeUp()
                     return
                 }
-                tvTimerDisplay.text = formatMillis(remaining)
+                val text = formatMillis(remaining)
+                if (text != tvTimerDisplay.text.toString()) {
+                    tvTimerDisplay.text = text
+                    animateDigitChange()
+                }
                 handler.postDelayed(this, 200)
             }
         }
@@ -63,14 +76,12 @@ class CountdownRunningActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_countdown_running)
 
-        // 加载自定义背景
+        // 自定义背景
         val bgPath = ProfileStorage.getBackgroundPath(this)
         val ivBg = findViewById<ImageView>(R.id.iv_background)
-        val layoutContent = findViewById<android.view.View>(R.id.layout_content)
         if (bgPath != null) {
             ivBg.setImageBitmap(android.graphics.BitmapFactory.decodeFile(bgPath))
-            ivBg.visibility = android.view.View.VISIBLE
-            layoutContent.setBackgroundColor(0xCCF5F9FC.toInt())
+            ivBg.visibility = View.VISIBLE
         }
 
         tvSubjectInfo = findViewById(R.id.tv_subject_info)
@@ -86,22 +97,31 @@ class CountdownRunningActivity : AppCompatActivity() {
         targetMillis = totalMinutes * 60L * 1000L
         pausedRemaining = targetMillis
 
-        tvSubjectInfo.text = "$subjectGroup - $subjectName"
+        tvSubjectInfo.text = "$subjectGroup — $subjectName"
         tvTargetInfo.text = "目标：${formatDuration(targetMillis / 1000)}"
         tvTimerDisplay.text = formatMillis(targetMillis)
+        lastDisplayText = formatMillis(targetMillis)
 
-        // 显示当前格言
+        // 显示格言
         findViewById<TextView>(R.id.tv_motto).text = MottoStorage.getCurrent(this)
 
         // 开始
         startTimestamp = System.currentTimeMillis()
         handler.post(refreshRunnable)
 
-        // 启动白噪音（如果已启用）
+        // 白噪音 & 音乐
         startWhiteNoiseIfEnabled()
-
-        // 启动音乐（如果已启用）
         startMusicIfEnabled()
+
+        // 页面进入动画（淡入）
+        findViewById<View>(R.id.layout_content).apply {
+            alpha = 0f
+            animate()
+                .alpha(1f)
+                .setDuration(400)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+        }
 
         btnPauseResume.setOnClickListener {
             if (isPaused) {
@@ -119,6 +139,26 @@ class CountdownRunningActivity : AppCompatActivity() {
         }
 
         btnEnd.setOnClickListener { saveAndFinish() }
+    }
+
+    /** 计时数字变化时的缩放弹跳动画 */
+    private fun animateDigitChange() {
+        val scaleUp = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_X, 1f, 1.08f)
+        val scaleUpY = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_Y, 1f, 1.08f)
+        val scaleDown = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_X, 1.08f, 1f)
+        val scaleDownY = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_Y, 1.08f, 1f)
+
+        scaleUp.duration = 100
+        scaleUpY.duration = 100
+        scaleDown.duration = 120
+        scaleDownY.duration = 120
+        scaleDown.interpolator = AccelerateDecelerateInterpolator()
+        scaleDownY.interpolator = AccelerateDecelerateInterpolator()
+
+        val set = AnimatorSet()
+        set.play(scaleUp).with(scaleUpY)
+        set.play(scaleDown).with(scaleDownY).after(scaleUp)
+        set.start()
     }
 
     private fun onTimeUp() {

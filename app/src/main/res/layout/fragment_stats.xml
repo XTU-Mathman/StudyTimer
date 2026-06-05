@@ -1,46 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 统计页面：日/周/月 切换 → 日期选择 → 科目时长列表 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/background_light">
 
-    <!-- ===== 1. 日/周/月 切换标签 ===== -->
-    <LinearLayout
+    <!-- ===== 1. 日/周/月 分段控件 ===== -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/toggle_period"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:gravity="center">
+        android:layout_height="44dp"
+        android:layout_margin="12dp"
+        app:singleSelection="true"
+        app:checkedButton="@+id/btn_day">
 
         <Button
             android:id="@+id/btn_day"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
             android:text="每日"
             android:textSize="14sp" />
 
         <Button
             android:id="@+id/btn_week"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
             android:text="每周"
             android:textSize="14sp" />
 
         <Button
             android:id="@+id/btn_month"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:text="每月"
             android:textSize="14sp" />
 
-    </LinearLayout>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- ===== 2. 日期选择栏 ===== -->
     <LinearLayout
@@ -54,15 +57,16 @@
         <!-- 上一天/周/月 -->
         <TextView
             android:id="@+id/btn_prev"
-            android:layout_width="48dp"
+            android:layout_width="36dp"
             android:layout_height="36dp"
-            android:text="◀"
-            android:textSize="18sp"
-            android:textColor="@color/text_primary"
+            android:text="‹"
+            android:textSize="20sp"
+            android:textColor="@color/blue_primary"
+            android:textStyle="bold"
             android:gravity="center"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground" />
+            android:background="@drawable/bg_circle_btn" />
 
         <!-- 日期显示（点击弹出日历选择器） -->
         <TextView
@@ -82,15 +86,16 @@
         <!-- 下一天/周/月 -->
         <TextView
             android:id="@+id/btn_next"
-            android:layout_width="48dp"
+            android:layout_width="36dp"
             android:layout_height="36dp"
-            android:text="▶"
-            android:textSize="18sp"
-            android:textColor="@color/text_primary"
+            android:text="›"
+            android:textSize="20sp"
+            android:textColor="@color/blue_primary"
+            android:textStyle="bold"
             android:gravity="center"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground" />
+            android:background="@drawable/bg_circle_btn" />
 
     </LinearLayout>
 
@@ -110,7 +115,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#FFE0E0E0" />
+        android:background="@color/blue_pale" />
 
     <!-- ===== 4. 统计内容（可滚动，含图表+列表） ===== -->
     <ScrollView
@@ -124,25 +129,28 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- 扇形图容器 -->
+            <!-- 扇形图卡片 -->
             <LinearLayout
                 android:id="@+id/chart_pie_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="8dp"
-                android:background="@color/background_white"
-                android:layout_marginBottom="8dp" />
+                android:background="@drawable/card_background"
+                android:layout_margin="12dp"
+                android:layout_marginBottom="4dp"
+                android:padding="8dp" />
 
-            <!-- 折线图容器（每日模式隐藏） -->
+            <!-- 折线图卡片（每日模式隐藏） -->
             <LinearLayout
                 android:id="@+id/chart_line_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:background="@drawable/card_background"
+                android:layout_margin="12dp"
+                android:layout_marginBottom="4dp"
                 android:padding="8dp"
-                android:background="@color/background_white"
-                android:layout_marginBottom="8dp" />
+                android:elevation="2dp" />
 
             <!-- 科目列表容器 -->
             <LinearLayout

@@ -1,10 +1,15 @@
 package com.example.studytimer
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -16,7 +21,8 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 全屏正计时：时间戳差值计时，切后台不影响
+ * 全屏正计时：时间戳差值计时，切后台不中断
+ * 高级简约风格 — 大数字 + 缩放动画 + 药丸按钮
  */
 class TimerRunningActivity : AppCompatActivity() {
 
@@ -26,21 +32,27 @@ class TimerRunningActivity : AppCompatActivity() {
     private lateinit var btnEnd: Button
 
     // 时间戳差值计时
-    private var startTimestamp = 0L       // 本轮开始时间戳
-    private var pausedElapsedMillis = 0L  // 暂停时已累计的毫秒数
+    private var startTimestamp = 0L
+    private var pausedElapsedMillis = 0L
     private var isPaused = false
     private var finished = false
+
+    // 数字动画追踪
+    private var lastDisplayText = "00:00:00"
 
     private var mediaPlayer: MediaPlayer? = null
     private val handler = Handler(Looper.getMainLooper())
     private val refreshRunnable = object : Runnable {
         override fun run() {
             if (!isPaused) {
-                // 实时计算：已过时间 = (现在 - 开始) + 暂停前累计
                 val elapsed = System.currentTimeMillis() - startTimestamp + pausedElapsedMillis
-                tvTimerDisplay.text = formatMillis(elapsed)
+                val text = formatMillis(elapsed)
+                if (text != tvTimerDisplay.text.toString()) {
+                    tvTimerDisplay.text = text
+                    animateDigitChange()
+                }
             }
-            handler.postDelayed(this, 200)  // 200ms 刷新一次，比 1s 更流畅
+            handler.postDelayed(this, 200)
         }
     }
 
@@ -56,44 +68,47 @@ class TimerRunningActivity : AppCompatActivity() {
         btnPauseResume = findViewById(R.id.btn_pause_resume)
         btnEnd = findViewById(R.id.btn_end)
 
-        // 加载自定义背景
+        // 自定义背景
         val bgPath = ProfileStorage.getBackgroundPath(this)
         val ivBg = findViewById<ImageView>(R.id.iv_background)
-        val layoutContent = findViewById<android.view.View>(R.id.layout_content)
         if (bgPath != null) {
             ivBg.setImageBitmap(BitmapFactory.decodeFile(bgPath))
-            ivBg.visibility = android.view.View.VISIBLE
-            // 内容区改为半透明，让背景透出
-            layoutContent.setBackgroundColor(0xCCF5F9FC.toInt())
+            ivBg.visibility = View.VISIBLE
         }
 
         subjectGroup = intent.getStringExtra("subject_group") ?: "未分类"
         subjectName = intent.getStringExtra("subject_name") ?: "未命名"
-        tvSubjectInfo.text = "$subjectGroup - $subjectName"
+        tvSubjectInfo.text = "$subjectGroup — $subjectName"
 
-        // 显示当前格言
+        // 显示格言
         findViewById<TextView>(R.id.tv_motto).text = MottoStorage.getCurrent(this)
 
         // 开始计时
         startTimestamp = System.currentTimeMillis()
         handler.post(refreshRunnable)
 
-        // 启动白噪音（如果已启用）
+        // 白噪音 & 音乐
         startWhiteNoiseIfEnabled()
-
-        // 启动音乐（如果已启用）
         startMusicIfEnabled()
+
+        // 页面进入动画（淡入）
+        findViewById<View>(R.id.layout_content).apply {
+            alpha = 0f
+            animate()
+                .alpha(1f)
+                .setDuration(400)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+        }
 
         // 暂停/继续
         btnPauseResume.setOnClickListener {
             if (isPaused) {
-                // 恢复：重置开始时间戳
                 isPaused = false
                 startTimestamp = System.currentTimeMillis()
                 handler.post(refreshRunnable)
                 btnPauseResume.text = "暂停"
             } else {
-                // 暂停：保存已累计时间
                 isPaused = true
                 pausedElapsedMillis += System.currentTimeMillis() - startTimestamp
                 handler.removeCallbacks(refreshRunnable)
@@ -103,6 +118,26 @@ class TimerRunningActivity : AppCompatActivity() {
 
         // 结束
         btnEnd.setOnClickListener { saveAndFinish() }
+    }
+
+    /** 计时数字变化时的缩放弹跳动画 */
+    private fun animateDigitChange() {
+        val scaleUp = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_X, 1f, 1.08f)
+        val scaleUpY = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_Y, 1f, 1.08f)
+        val scaleDown = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_X, 1.08f, 1f)
+        val scaleDownY = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_Y, 1.08f, 1f)
+
+        scaleUp.duration = 100
+        scaleUpY.duration = 100
+        scaleDown.duration = 120
+        scaleDownY.duration = 120
+        scaleDown.interpolator = AccelerateDecelerateInterpolator()
+        scaleDownY.interpolator = AccelerateDecelerateInterpolator()
+
+        val set = AnimatorSet()
+        set.play(scaleUp).with(scaleUpY)
+        set.play(scaleDown).with(scaleDownY).after(scaleUp)
+        set.start()
     }
 
     private fun saveAndFinish() {
@@ -121,7 +156,6 @@ class TimerRunningActivity : AppCompatActivity() {
             ))
             Toast.makeText(this, "已记录：${formatMillis(totalMillis)}", Toast.LENGTH_SHORT).show()
         }
-        // 切换到下一条格言
         MottoStorage.moveToNext(this)
         WhiteNoiseEngine.getInstance().stop()
         stopMusic()
@@ -133,7 +167,7 @@ class TimerRunningActivity : AppCompatActivity() {
             .setTitle("放弃计时？")
             .setMessage("计时仍在进行，确定要放弃吗？")
             .setPositiveButton("确定放弃") { _, _ ->
-                finished = true  // 防 onStop 纯净模式误存
+                finished = true
                 handler.removeCallbacks(refreshRunnable)
                 WhiteNoiseEngine.getInstance().stop()
                 stopMusic()
