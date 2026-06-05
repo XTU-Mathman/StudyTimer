@@ -21,13 +21,12 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 全屏正计时：时间戳差值计时，切后台不中断
- * 高级简约风格 — 大数字 + 缩放动画 + 药丸按钮
+ * 全屏正计时 — 圆形进度环 UI
+ * 时间戳差值计时，切后台不中断
  */
 class TimerRunningActivity : AppCompatActivity() {
 
-    private lateinit var tvSubjectInfo: TextView
-    private lateinit var tvTimerDisplay: TextView
+    private lateinit var circularTimer: CircularTimerView
     private lateinit var btnPauseResume: Button
     private lateinit var btnEnd: Button
 
@@ -37,8 +36,8 @@ class TimerRunningActivity : AppCompatActivity() {
     private var isPaused = false
     private var finished = false
 
-    // 数字动画追踪
-    private var lastDisplayText = "00:00:00"
+    // 计时总时长（用于进度计算，正计时无上限，用当前最大值模拟）
+    private var maxExpectedMillis = 3600_000L  // 默认1小时满环
 
     private var mediaPlayer: MediaPlayer? = null
     private val handler = Handler(Looper.getMainLooper())
@@ -47,10 +46,18 @@ class TimerRunningActivity : AppCompatActivity() {
             if (!isPaused) {
                 val elapsed = System.currentTimeMillis() - startTimestamp + pausedElapsedMillis
                 val text = formatMillis(elapsed)
-                if (text != tvTimerDisplay.text.toString()) {
-                    tvTimerDisplay.text = text
-                    animateDigitChange()
-                }
+
+                // 更新环：随着时间推移，进度从0→1
+                // 1小时满环，超过后继续但环已满
+                val prog = (elapsed.toFloat() / maxExpectedMillis).coerceAtMost(1f)
+                circularTimer.timeText = text
+                circularTimer.progress = prog
+
+                // 状态文本显示已用时间描述
+                circularTimer.statusText = if (elapsed < 60_000) "刚刚开始"
+                else if (elapsed < 600_000) "持续专注中"
+                else if (elapsed < 1800_000) "状态良好"
+                else "深度专注"
             }
             handler.postDelayed(this, 200)
         }
@@ -63,8 +70,7 @@ class TimerRunningActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_timer_running)
 
-        tvSubjectInfo = findViewById(R.id.tv_subject_info)
-        tvTimerDisplay = findViewById(R.id.tv_timer_display)
+        circularTimer = findViewById(R.id.circular_timer)
         btnPauseResume = findViewById(R.id.btn_pause_resume)
         btnEnd = findViewById(R.id.btn_end)
 
@@ -78,10 +84,16 @@ class TimerRunningActivity : AppCompatActivity() {
 
         subjectGroup = intent.getStringExtra("subject_group") ?: "未分类"
         subjectName = intent.getStringExtra("subject_name") ?: "未命名"
-        tvSubjectInfo.text = "$subjectGroup — $subjectName"
+        circularTimer.subjectText = "$subjectGroup — $subjectName"
 
         // 显示格言
         findViewById<TextView>(R.id.tv_motto).text = MottoStorage.getCurrent(this)
+
+        // 设置倒计时模式=false（正计时）
+        circularTimer.isCountdown = false
+        circularTimer.timeText = "00:00:00"
+        circularTimer.progress = 0f
+        circularTimer.statusText = "准备开始"
 
         // 开始计时
         startTimestamp = System.currentTimeMillis()
@@ -91,7 +103,16 @@ class TimerRunningActivity : AppCompatActivity() {
         startWhiteNoiseIfEnabled()
         startMusicIfEnabled()
 
-        // 页面进入动画（淡入）
+        // 页面进入动画（淡入 + 环缩放）
+        circularTimer.scaleX = 0.8f
+        circularTimer.scaleY = 0.8f
+        circularTimer.alpha = 0f
+        circularTimer.animate()
+            .scaleX(1f).scaleY(1f).alpha(1f)
+            .setDuration(500)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+
         findViewById<View>(R.id.layout_content).apply {
             alpha = 0f
             animate()
@@ -108,36 +129,18 @@ class TimerRunningActivity : AppCompatActivity() {
                 startTimestamp = System.currentTimeMillis()
                 handler.post(refreshRunnable)
                 btnPauseResume.text = "暂停"
+                circularTimer.pulse()  // 恢复时弹跳
             } else {
                 isPaused = true
                 pausedElapsedMillis += System.currentTimeMillis() - startTimestamp
                 handler.removeCallbacks(refreshRunnable)
                 btnPauseResume.text = "继续"
+                circularTimer.statusText = "已暂停"
             }
         }
 
         // 结束
         btnEnd.setOnClickListener { saveAndFinish() }
-    }
-
-    /** 计时数字变化时的缩放弹跳动画 */
-    private fun animateDigitChange() {
-        val scaleUp = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_X, 1f, 1.08f)
-        val scaleUpY = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_Y, 1f, 1.08f)
-        val scaleDown = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_X, 1.08f, 1f)
-        val scaleDownY = ObjectAnimator.ofFloat(tvTimerDisplay, View.SCALE_Y, 1.08f, 1f)
-
-        scaleUp.duration = 100
-        scaleUpY.duration = 100
-        scaleDown.duration = 120
-        scaleDownY.duration = 120
-        scaleDown.interpolator = AccelerateDecelerateInterpolator()
-        scaleDownY.interpolator = AccelerateDecelerateInterpolator()
-
-        val set = AnimatorSet()
-        set.play(scaleUp).with(scaleUpY)
-        set.play(scaleDown).with(scaleDownY).after(scaleUp)
-        set.start()
     }
 
     private fun saveAndFinish() {

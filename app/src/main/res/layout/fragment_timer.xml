@@ -1,129 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 计时主页：科目选择 → 模式切换 → 开始按钮（跳转全屏计时页） -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 计时主页大改版：动态背景 + ChipGroup 科目 + 双卡片模式选择 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
-    android:fillViewport="true">
+    android:background="@color/bg_page">
 
-    <LinearLayout
+    <!-- 动态背景层 -->
+    <com.example.studytimer.DynamicBackgroundView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="match_parent" />
 
-        <!-- ===== 1. 科目选择区域 ===== -->
+    <!-- 内容层 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+            android:padding="20dp">
 
+            <!-- 页面标题 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="选择计时科目"
-                android:textSize="16sp"
+                android:text="开始计时"
+                android:textSize="26sp"
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- 科目集选择 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="科目集"
-                android:textSize="13sp"
-                android:textColor="@color/text_secondary"
                 android:layout_marginBottom="4dp" />
 
-            <Spinner
-                android:id="@+id/spinner_group"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_spinner"
-                android:padding="12dp"
-                android:spinnerMode="dialog"
-                android:layout_marginBottom="12dp" />
-
-            <!-- 具体科目选择 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="具体科目"
-                android:textSize="13sp"
+                android:text="选择科目与模式"
+                android:textSize="14sp"
                 android:textColor="@color/text_secondary"
-                android:layout_marginBottom="4dp" />
+                android:layout_marginBottom="24dp" />
 
-            <Spinner
-                android:id="@+id/spinner_subject"
+            <!-- ===== 1. 科目选择（玻璃卡片） ===== -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_spinner"
-                android:padding="12dp"
-                android:spinnerMode="dialog" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_glass"
+                android:padding="20dp"
+                android:elevation="1dp"
+                android:layout_marginBottom="16dp">
 
-        </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="科目"
+                    android:textSize="17sp"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp" />
 
-        <!-- ===== 2. 分段控件：正计时 / 倒计时 ===== -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
+                <!-- 科目集 ChipGroup -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="科目集"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_tertiary"
+                    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:id="@+id/btn_count_up"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:text="正计时"
-                android:textSize="15sp"
-                android:textColor="@color/white"
-                android:gravity="center"
-                android:background="@drawable/bg_segment_left_selected" />
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:singleSelection="true"
+                    app:selectionRequired="false"
+                    app:chipSpacing="8dp">
 
-            <TextView
-                android:id="@+id/btn_count_down"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:text="倒计时"
-                android:textSize="15sp"
-                android:textColor="@color/blue_primary"
-                android:gravity="center"
-                android:background="@drawable/bg_segment_right" />
+                    <!-- 动态由代码添加 -->
 
-        </LinearLayout>
+                </com.google.android.material.chip.ChipGroup>
 
-        <!-- ===== 3. 正计时「开始计时」按钮 ===== -->
-        <Button
-            android:id="@+id/btn_start_timer"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:text="开始计时"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+                <!-- 具体科目 Spinner（改为 ChipGroup） -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="具体科目"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_tertiary"
+                    android:layout_marginBottom="8dp" />
 
-        <!-- ===== 4. 倒计时区域（默认隐藏） ===== -->
-        <LinearLayout
-            android:id="@+id/layout_countdown"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:visibility="gone">
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_subject"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:selectionRequired="false"
+                    app:chipSpacing="8dp" />
 
+            </LinearLayout>
+
+            <!-- ===== 2. 模式选择：双卡片 ===== -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="设置目标时长"
-                android:textSize="16sp"
-                android:textColor="@color/text_primary"
-                android:textStyle="bold"
+                android:text="选择模式"
+                android:textSize="14sp"
+                android:textColor="@color/text_secondary"
                 android:layout_marginBottom="12dp" />
 
             <LinearLayout
@@ -131,65 +115,185 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="20dp">
 
-                <!-- 小时输入 -->
-                <EditText
-                    android:id="@+id/et_hours"
-                    android:layout_width="72dp"
-                    android:layout_height="48dp"
-                    android:inputType="number"
-                    android:maxLength="3"
-                    android:text="1"
-                    android:textSize="24sp"
-                    android:textColor="@color/text_primary"
+                <!-- 正计时卡片 -->
+                <LinearLayout
+                    android:id="@+id/card_count_up"
+                    android:layout_width="0dp"
+                    android:layout_height="120dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:orientation="vertical"
                     android:gravity="center"
-                    android:background="@drawable/bg_input"
-                    android:padding="0dp" />
+                    android:background="@drawable/card_glass"
+                    android:elevation="2dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="小时"
-                    android:textSize="16sp"
-                    android:textColor="@color/text_primary"
-                    android:paddingHorizontal="8dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⏱"
+                        android:textSize="32sp"
+                        android:layout_marginBottom="8dp" />
 
-                <!-- 分钟输入 -->
-                <EditText
-                    android:id="@+id/et_minutes"
-                    android:layout_width="72dp"
-                    android:layout_height="48dp"
-                    android:inputType="number"
-                    android:maxLength="2"
-                    android:text="30"
-                    android:textSize="24sp"
-                    android:textColor="@color/text_primary"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="正计时"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="不限时长"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_tertiary"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <!-- 倒计时卡片 -->
+                <LinearLayout
+                    android:id="@+id/card_count_down"
+                    android:layout_width="0dp"
+                    android:layout_height="120dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical"
                     android:gravity="center"
-                    android:background="@drawable/bg_input"
-                    android:padding="0dp" />
+                    android:background="@drawable/card_glass"
+                    android:elevation="2dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="分钟"
-                    android:textSize="16sp"
-                    android:textColor="@color/text_primary"
-                    android:paddingHorizontal="8dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⏳"
+                        android:textSize="32sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="倒计时"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="设定时长"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_tertiary"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
-            <!-- 开始倒计时按钮 -->
-            <Button
-                android:id="@+id/btn_start_countdown"
+            <!-- ===== 3. 倒计时时长设置（默认隐藏） ===== -->
+            <LinearLayout
+                android:id="@+id/layout_countdown"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="开始倒计时"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_glass"
+                android:padding="20dp"
+                android:elevation="1dp"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="设置目标时长"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp">
+
+                    <EditText
+                        android:id="@+id/et_hours"
+                        android:layout_width="64dp"
+                        android:layout_height="48dp"
+                        android:inputType="number"
+                        android:maxLength="2"
+                        android:text="1"
+                        android:textSize="22sp"
+                        android:textColor="@color/text_primary"
+                        android:gravity="center"
+                        android:background="@drawable/bg_input" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="时"
+                        android:textSize="15sp"
+                        android:textColor="@color/text_secondary"
+                        android:paddingHorizontal="6dp" />
+
+                    <EditText
+                        android:id="@+id/et_minutes"
+                        android:layout_width="64dp"
+                        android:layout_height="48dp"
+                        android:inputType="number"
+                        android:maxLength="2"
+                        android:text="30"
+                        android:textSize="22sp"
+                        android:textColor="@color/text_primary"
+                        android:gravity="center"
+                        android:background="@drawable/bg_input" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="分"
+                        android:textSize="15sp"
+                        android:textColor="@color/text_secondary"
+                        android:paddingHorizontal="6dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ===== 4. 开始按钮 ===== -->
+            <Button
+                android:id="@+id/btn_start"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:text="开始"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:stateListAnimator="@null"
+                android:elevation="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="专注当下，不负时光"
+                android:textSize="12sp"
+                android:textColor="@color/text_tertiary"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="24dp" />
 
         </LinearLayout>
 
-    </LinearLayout>
+    </ScrollView>
 
-</ScrollView>
+</FrameLayout>

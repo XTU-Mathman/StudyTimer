@@ -178,7 +178,7 @@ class ProfileFragment : Fragment() {
                 val tv = TextView(ctx).apply {
                     text = "${idx + 1}. $motto"
                     textSize = 14f
-                    setTextColor(Color.parseColor("#FF333333"))
+                    setTextColor(Color.parseColor("#FF2D2D2D"))
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 row.addView(tv)
@@ -231,7 +231,7 @@ class ProfileFragment : Fragment() {
                 val tv = TextView(requireContext()).apply {
                     text = "${idx + 1}. $motto"
                     textSize = 14f
-                    setTextColor(Color.parseColor("#FF333333"))
+                    setTextColor(Color.parseColor("#FF2D2D2D"))
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 row.addView(tv)
@@ -337,7 +337,7 @@ class ProfileFragment : Fragment() {
 
         val tvDate = TextView(ctx).apply {
             textSize = 16f
-            setTextColor(Color.parseColor("#FF333333"))
+            setTextColor(Color.parseColor("#FF2D2D2D"))
             gravity = android.view.Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
@@ -384,7 +384,7 @@ class ProfileFragment : Fragment() {
                 val tv = TextView(ctx).apply {
                     text = info
                     textSize = 15f
-                    setTextColor(Color.parseColor(if (record != null) "#FF4CAF50" else "#FFAAAAAA"))
+                    setTextColor(Color.parseColor(if (record != null) "#FF34C759" else "#FFB0AAA5"))
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 row.addView(tv)
@@ -475,14 +475,14 @@ class ProfileFragment : Fragment() {
         val tvToggleLabel = TextView(ctx).apply {
             text = "启用白噪音"
             textSize = 16f
-            setTextColor(Color.parseColor("#FF333333"))
+            setTextColor(Color.parseColor("#FF2D2D2D"))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         toggleRow.addView(tvToggleLabel)
 
         val tvToggle = makeBtn(
             if (enabled) "关闭" else "开启",
-            if (enabled) "#FFAAAAAA" else "#FF6B9FC7"
+            if (enabled) "#FFB0AAA5" else "#FF6B9FC7"
         ) {
             val newEnabled = !WhiteNoiseStorage.isEnabled(ctx)
             WhiteNoiseStorage.setEnabled(ctx, newEnabled)
@@ -499,7 +499,7 @@ class ProfileFragment : Fragment() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 1
             )
-            setBackgroundColor(Color.parseColor("#FFE0E0E0"))
+            setBackgroundColor(Color.parseColor("#1A000000"))
         }
         contentLayout.addView(divider)
 
@@ -537,7 +537,7 @@ class ProfileFragment : Fragment() {
             val tvLabel = TextView(ctx).apply {
                 text = type.label
                 textSize = 15f
-                setTextColor(Color.parseColor("#FF333333"))
+                setTextColor(Color.parseColor("#FF2D2D2D"))
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             row.addView(tvLabel)
@@ -554,7 +554,7 @@ class ProfileFragment : Fragment() {
         val tvHint = TextView(ctx).apply {
             text = "选择后，开始计时时将自动播放"
             textSize = 12f
-            setTextColor(Color.parseColor("#FFAAAAAA"))
+            setTextColor(Color.parseColor("#FFB0AAA5"))
             setPadding(0, 12, 0, 0)
             gravity = android.view.Gravity.CENTER
         }
@@ -604,12 +604,12 @@ class ProfileFragment : Fragment() {
         toggleRow.addView(TextView(ctx).apply {
             text = "启用音乐"
             textSize = 16f
-            setTextColor(Color.parseColor("#FF333333"))
+            setTextColor(Color.parseColor("#FF2D2D2D"))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         })
         toggleRow.addView(makeBtn(
             if (enabled) "关闭" else "开启",
-            if (enabled) "#FFAAAAAA" else "#FF6B9FC7"
+            if (enabled) "#FFB0AAA5" else "#FF6B9FC7"
         ) {
             val newEnabled = !MusicStorage.isEnabled(ctx)
             MusicStorage.setEnabled(ctx, newEnabled)
@@ -638,7 +638,7 @@ class ProfileFragment : Fragment() {
             contentLayout.addView(TextView(ctx).apply {
                 text = "暂无音乐，点击上方上传"
                 textSize = 13f
-                setTextColor(Color.parseColor("#FFAAAAAA"))
+                setTextColor(Color.parseColor("#FFB0AAA5"))
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 24, 0, 12)
             })
@@ -671,7 +671,7 @@ class ProfileFragment : Fragment() {
                 row.addView(TextView(ctx).apply {
                     text = track.name
                     textSize = 14f
-                    setTextColor(Color.parseColor("#FF333333"))
+                    setTextColor(Color.parseColor("#FF2D2D2D"))
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     setOnClickListener {
                         MusicStorage.setSelectedIndex(ctx, i)
@@ -707,7 +707,7 @@ class ProfileFragment : Fragment() {
         contentLayout.addView(TextView(ctx).apply {
             text = "选择曲目后，开始计时时将自动循环播放"
             textSize = 12f
-            setTextColor(Color.parseColor("#FFAAAAAA"))
+            setTextColor(Color.parseColor("#FFB0AAA5"))
             setPadding(0, 12, 0, 0)
             gravity = android.view.Gravity.CENTER
         })
@@ -748,12 +748,12 @@ class ProfileFragment : Fragment() {
         toggleRow.addView(TextView(ctx).apply {
             text = if (enabled) "纯净模式：已开启" else "纯净模式：已关闭"
             textSize = 16f
-            setTextColor(Color.parseColor("#FF333333"))
+            setTextColor(Color.parseColor("#FF2D2D2D"))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         })
         toggleRow.addView(makeBtn(
             if (enabled) "关闭" else "开启",
-            if (enabled) "#FFAAAAAA" else "#FF6B9FC7"
+            if (enabled) "#FFB0AAA5" else "#FF6B9FC7"
         ) {
             PureModeStorage.setEnabled(ctx, !enabled)
             updatePureModeUI()

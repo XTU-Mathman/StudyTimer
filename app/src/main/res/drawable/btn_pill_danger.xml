@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 药丸形危险按钮：淡红底 + 水波纹 -->
+<!-- 药丸形危险按钮：淡红底 + 32dp 大圆角 + 水波纹 -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
     android:color="#33FF3B30">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#FFFEEBEB" />
-            <corners android:radius="28dp" />
+            <corners android:radius="32dp" />
+            <stroke
+                android:width="0.5dp"
+                android:color="#40FFFFFF" />
         </shape>
     </item>
 </ripple>

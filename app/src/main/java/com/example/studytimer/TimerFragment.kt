@@ -1,46 +1,38 @@
 package com.example.studytimer
 
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
+import android.view.animation.OvershootInterpolator
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
-import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 
 /**
- * 计时主页：选择科目与模式，下拉框内直接新增科目集/科目
+ * 计时主页大改版
+ * - ChipGroup 替代 Spinner 选科目
+ * - 双卡片（正计时/倒计时）替代分段按钮
+ * - 大号开始按钮
  */
 class TimerFragment : Fragment() {
 
-    // ==================== 视图控件 ====================
-    private lateinit var spinnerGroup: Spinner
-    private lateinit var spinnerSubject: Spinner
-    private lateinit var btnCountUp: TextView
-    private lateinit var btnCountDown: TextView
-    private lateinit var btnStartTimer: Button
+    private lateinit var chipGroup: ChipGroup
+    private lateinit var chipSubject: ChipGroup
+    private lateinit var cardCountUp: View
+    private lateinit var cardCountDown: View
     private lateinit var layoutCountdown: View
     private lateinit var etHours: EditText
     private lateinit var etMinutes: EditText
-    private lateinit var btnStartCountdown: Button
-
-    // ==================== 适配器 ====================
-    private lateinit var groupAdapter: ArrayAdapter<String>
-    private lateinit var subjectAdapter: ArrayAdapter<String>
+    private lateinit var btnStart: Button
 
     private var isCountUpMode = true
-    private var isAdding = false  // 防止新增时循环触发 onItemSelected
-
-    // 特殊选项文字
-    private val ADD_NEW_GROUP = "+ 新增科目集"
-    private val ADD_NEW_SUBJECT = "+ 新增科目"
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -51,140 +43,182 @@ class TimerFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 绑定控件
-        spinnerGroup = view.findViewById(R.id.spinner_group)
-        spinnerSubject = view.findViewById(R.id.spinner_subject)
-        btnCountUp = view.findViewById(R.id.btn_count_up)
-        btnCountDown = view.findViewById(R.id.btn_count_down)
-        btnStartTimer = view.findViewById(R.id.btn_start_timer)
+        chipGroup = view.findViewById(R.id.chip_group)
+        chipSubject = view.findViewById(R.id.chip_subject)
+        cardCountUp = view.findViewById(R.id.card_count_up)
+        cardCountDown = view.findViewById(R.id.card_count_down)
         layoutCountdown = view.findViewById(R.id.layout_countdown)
         etHours = view.findViewById(R.id.et_hours)
         etMinutes = view.findViewById(R.id.et_minutes)
-        btnStartCountdown = view.findViewById(R.id.btn_start_countdown)
+        btnStart = view.findViewById(R.id.btn_start)
 
-        // 加载科目集（含"+ 新增科目集"）
-        refreshGroupSpinner()
+        // 加载科目集 Chip
+        refreshGroupChips()
 
-        // 科目集选择 → 联动科目 / 新增
-        spinnerGroup.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                if (isAdding) { isAdding = false; return }  // 新增操作触发，跳过
-                val selectedText = parent?.getItemAtPosition(pos)?.toString() ?: return
-                if (selectedText == ADD_NEW_GROUP) {
-                    isAdding = true
+        // 科目集选择 → 刷新科目 Chip
+        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.isNotEmpty()) {
+                val chip = chipGroup.findViewById<Chip>(checkedIds[0])
+                val name = chip?.text?.toString() ?: return@setOnCheckedStateChangeListener
+                if (name == "+ 新增") {
+                    chipGroup.clearCheck()
                     showAddGroupDialog()
                 } else {
-                    updateSubjectSpinner(selectedText)
+                    refreshSubjectChips(name)
                 }
             }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        // 科目选择 → 新增
-        spinnerSubject.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                if (isAdding) { isAdding = false; return }
-                val selectedText = parent?.getItemAtPosition(pos)?.toString() ?: return
-                if (selectedText == ADD_NEW_SUBJECT) {
-                    isAdding = true
-                    val groupName = getSelectedGroupName()
+        chipSubject.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.isNotEmpty()) {
+                val chip = chipSubject.findViewById<Chip>(checkedIds[0])
+                val name = chip?.text?.toString() ?: return@setOnCheckedStateChangeListener
+                if (name == "+ 新增") {
+                    chipSubject.clearCheck()
+                    val groupName = getSelectedGroup()
                     showAddSubjectDialog(groupName)
                 }
             }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        // 分段控件：正计时 / 倒计时
-        btnCountUp.setOnClickListener {
-            isCountUpMode = true
-            btnStartTimer.visibility = View.VISIBLE
-            layoutCountdown.visibility = View.GONE
-            btnCountUp.background = resources.getDrawable(R.drawable.bg_segment_left_selected, null)
-            btnCountUp.setTextColor(resources.getColor(R.color.white, null))
-            btnCountDown.background = resources.getDrawable(R.drawable.bg_segment_right, null)
-            btnCountDown.setTextColor(resources.getColor(R.color.blue_primary, null))
-        }
+        // 模式卡片选择
+        selectMode(true)
+        cardCountUp.setOnClickListener { selectMode(true) }
+        cardCountDown.setOnClickListener { selectMode(false) }
 
-        btnCountDown.setOnClickListener {
-            isCountUpMode = false
-            btnStartTimer.visibility = View.GONE
-            layoutCountdown.visibility = View.VISIBLE
-            btnCountDown.background = resources.getDrawable(R.drawable.bg_segment_right_selected, null)
-            btnCountDown.setTextColor(resources.getColor(R.color.white, null))
-            btnCountUp.background = resources.getDrawable(R.drawable.bg_segment_left, null)
-            btnCountUp.setTextColor(resources.getColor(R.color.blue_primary, null))
-        }
-
-        // 正计时 → 跳转
-        btnStartTimer.setOnClickListener {
-            val intent = Intent(requireContext(), TimerRunningActivity::class.java).apply {
-                putExtra("subject_group", getSelectedGroupName())
-                putExtra("subject_name", getSelectedSubjectName())
-            }
-            startActivity(intent)
-        }
-
-        // 倒计时 → 跳转
-        btnStartCountdown.setOnClickListener {
-            val h = etHours.text.toString().toIntOrNull() ?: 0
-            val m = etMinutes.text.toString().toIntOrNull() ?: 0
-            if (h == 0 && m == 0) {
-                Toast.makeText(requireContext(), "请设置至少 1 分钟", Toast.LENGTH_SHORT).show()
+        // 开始按钮
+        btnStart.setOnClickListener {
+            val group = getSelectedGroup()
+            val subject = getSelectedSubject()
+            if (subject.isEmpty()) {
+                Toast.makeText(requireContext(), "请选择科目", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val intent = Intent(requireContext(), CountdownRunningActivity::class.java).apply {
-                putExtra("subject_group", getSelectedGroupName())
-                putExtra("subject_name", getSelectedSubjectName())
-                putExtra("total_minutes", h * 60 + m)
+            if (isCountUpMode) {
+                startActivity(Intent(requireContext(), TimerRunningActivity::class.java).apply {
+                    putExtra("subject_group", group)
+                    putExtra("subject_name", subject)
+                })
+            } else {
+                val h = etHours.text.toString().toIntOrNull() ?: 0
+                val m = etMinutes.text.toString().toIntOrNull() ?: 0
+                if (h == 0 && m == 0) {
+                    Toast.makeText(requireContext(), "请设置至少 1 分钟", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                startActivity(Intent(requireContext(), CountdownRunningActivity::class.java).apply {
+                    putExtra("subject_group", group)
+                    putExtra("subject_name", subject)
+                    putExtra("total_minutes", h * 60 + m)
+                })
             }
-            startActivity(intent)
         }
     }
 
-    // ==================== 科目集/科目下拉框 ====================
+    private fun selectMode(isUp: Boolean) {
+        isCountUpMode = isUp
+        val selectedBg = requireContext().getDrawable(R.drawable.btn_pill_primary)
+        val defaultBg = requireContext().getDrawable(R.drawable.card_glass)
 
-    /** 刷新科目集 Spinner，末尾追加"新增" */
-    private fun refreshGroupSpinner() {
-        val names = SubjectData.getGroupNames().toMutableList()
-        names.add(ADD_NEW_GROUP)
-        groupAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, names)
-        groupAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerGroup.adapter = groupAdapter
-        if (SubjectData.getGroupNames().isNotEmpty()) {
-            spinnerGroup.setSelection(0)
+        cardCountUp.background = if (isUp) selectedBg else defaultBg
+        cardCountDown.background = if (!isUp) selectedBg else defaultBg
+
+        // 弹性缩放动画
+        val target = if (isUp) cardCountUp else cardCountDown
+        ObjectAnimator.ofFloat(target, View.SCALE_X, 1f, 1.05f, 1f).apply {
+            duration = 400; interpolator = OvershootInterpolator(1.5f); start()
+        }
+        ObjectAnimator.ofFloat(target, View.SCALE_Y, 1f, 1.05f, 1f).apply {
+            duration = 400; interpolator = OvershootInterpolator(1.5f); start()
+        }
+
+        layoutCountdown.visibility = if (isUp) View.GONE else View.VISIBLE
+        btnStart.text = if (isUp) "开始专注" else "开始倒计时"
+    }
+
+    // ==================== ChipGroup 科目管理 ====================
+
+    private fun refreshGroupChips() {
+        chipGroup.removeAllViews()
+        val names = SubjectData.getGroupNames()
+        for (name in names) {
+            chipGroup.addView(createChip(name))
+        }
+        // 新增按钮
+        chipGroup.addView(createChip("+ 新增").apply { isCheckable = false })
+        if (names.isNotEmpty()) {
+            (chipGroup.getChildAt(0) as? Chip)?.isChecked = true
         }
     }
 
-    /** 更新科目 Spinner，末尾追加"新增" */
-    private fun updateSubjectSpinner(groupName: String) {
-        val subjects = SubjectData.getSubjectsByGroup(groupName).toMutableList()
-        subjects.add(ADD_NEW_SUBJECT)
-        subjectAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, subjects)
-        subjectAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerSubject.adapter = subjectAdapter
-        spinnerSubject.setSelection(0)
+    private fun refreshSubjectChips(groupName: String) {
+        chipSubject.removeAllViews()
+        val subjects = SubjectData.getSubjectsByGroup(groupName)
+        for (sub in subjects) {
+            chipSubject.addView(createChip(sub))
+        }
+        chipSubject.addView(createChip("+ 新增").apply { isCheckable = false })
+        if (subjects.isNotEmpty()) {
+            (chipSubject.getChildAt(0) as? Chip)?.isChecked = true
+        }
     }
 
-    /** 获取当前选中的科目集名（过滤掉"新增"选项） */
-    private fun getSelectedGroupName(): String {
-        val text = spinnerGroup.selectedItem?.toString() ?: ""
-        return if (text == ADD_NEW_GROUP) SubjectData.getGroupNames().firstOrNull() ?: "未分类" else text
+    private fun createChip(text: String): Chip {
+        return Chip(requireContext()).apply {
+            this.text = text
+            isClickable = true
+            isCheckable = true
+            textSize = 13f
+            setChipBackgroundColorResource(android.R.color.transparent)
+            chipBackgroundColor = android.content.res.ColorStateList.valueOf(
+                android.graphics.Color.parseColor("#18FFFFFF")
+            )
+            chipStrokeColor = android.content.res.ColorStateList(
+                arrayOf(
+                    intArrayOf(android.R.attr.state_checked),
+                    intArrayOf(-android.R.attr.state_checked)
+                ),
+                intArrayOf(
+                    0xFF6B9FC7.toInt(),
+                    0x336B9FC7.toInt()
+                )
+            )
+            chipStrokeWidth = 1.5f
+            chipCornerRadius = 20f
+            setTextColor(android.content.res.ColorStateList(
+                arrayOf(
+                    intArrayOf(android.R.attr.state_checked),
+                    intArrayOf(-android.R.attr.state_checked)
+                ),
+                intArrayOf(
+                    0xFF6B9FC7.toInt(),
+                    0xFF8B8580.toInt()
+                )
+            ))
+            setPadding(12, 8, 12, 8)
+        }
     }
 
-    /** 获取当前选中的科目名（过滤掉"新增"选项） */
-    private fun getSelectedSubjectName(): String {
-        val text = spinnerSubject.selectedItem?.toString() ?: ""
-        return if (text == ADD_NEW_SUBJECT) {
-            val gn = getSelectedGroupName()
-            SubjectData.getSubjectsByGroup(gn).firstOrNull() ?: "未命名"
-        } else text
+    private fun getSelectedGroup(): String {
+        val checkedId = chipGroup.checkedChipId
+        if (checkedId == View.NO_ID) return SubjectData.getGroupNames().firstOrNull() ?: "未分类"
+        val chip = chipGroup.findViewById<Chip>(checkedId) ?: return "未分类"
+        return chip.text.toString()
+    }
+
+    private fun getSelectedSubject(): String {
+        val checkedId = chipSubject.checkedChipId
+        if (checkedId == View.NO_ID) return ""
+        val chip = chipSubject.findViewById<Chip>(checkedId) ?: return ""
+        val name = chip.text.toString()
+        return if (name == "+ 新增") "" else name
     }
 
     // ==================== 新增对话框 ====================
 
     private fun showAddGroupDialog() {
         val input = EditText(requireContext()).apply {
-            hint = "输入科目集名称（如：专业课）"
+            hint = "输入科目集名称"
             setPadding(32, 16, 32, 16)
         }
         AlertDialog.Builder(requireContext())
@@ -194,23 +228,16 @@ class TimerFragment : Fragment() {
                 val name = input.text.toString().trim()
                 if (name.isNotEmpty()) {
                     SubjectData.addGroup(requireContext(), name)
-                    refreshGroupSpinner()
-                    // 选中新添加的项
-                    val idx = SubjectData.getGroupNames().indexOf(name)
-                    if (idx >= 0) spinnerGroup.setSelection(idx)
+                    refreshGroupChips()
                     Toast.makeText(requireContext(), "已添加「$name」", Toast.LENGTH_SHORT).show()
-                } else {
-                    resetGroupSelection()
                 }
             }
-            .setNegativeButton("取消") { _, _ -> resetGroupSelection() }
-            .setOnCancelListener { resetGroupSelection() }
-            .show()
+            .setNegativeButton("取消", null).show()
     }
 
     private fun showAddSubjectDialog(groupName: String) {
         val input = EditText(requireContext()).apply {
-            hint = "输入科目名称（如：线代）"
+            hint = "输入科目名称"
             setPadding(32, 16, 32, 16)
         }
         AlertDialog.Builder(requireContext())
@@ -220,26 +247,10 @@ class TimerFragment : Fragment() {
                 val name = input.text.toString().trim()
                 if (name.isNotEmpty()) {
                     SubjectData.addSubject(requireContext(), groupName, name)
-                    updateSubjectSpinner(groupName)
-                    val idx = SubjectData.getSubjectsByGroup(groupName).indexOf(name)
-                    if (idx >= 0) spinnerSubject.setSelection(idx)
+                    refreshSubjectChips(groupName)
                     Toast.makeText(requireContext(), "已添加「$name」", Toast.LENGTH_SHORT).show()
-                } else {
-                    resetSubjectSelection()
                 }
             }
-            .setNegativeButton("取消") { _, _ -> resetSubjectSelection() }
-            .setOnCancelListener { resetSubjectSelection() }
-            .show()
-    }
-
-    /** 取消新增科目集 → 恢复到第一个已有项 */
-    private fun resetGroupSelection() {
-        if (SubjectData.getGroupNames().isNotEmpty()) spinnerGroup.setSelection(0)
-    }
-
-    /** 取消新增科目 → 恢复到第一个已有项 */
-    private fun resetSubjectSelection() {
-        spinnerSubject.setSelection(0)
+            .setNegativeButton("取消", null).show()
     }
 }

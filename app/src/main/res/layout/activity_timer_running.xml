@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 全屏正计时：毛玻璃背景 → 大数字 → 药丸按钮 → 底部格言 -->
+<!-- 全屏正计时：圆形进度环 + 动态背景 + 玻璃按钮 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FFFDFBF7">
 
     <!-- 自定义背景图片（最底层） -->
     <ImageView
@@ -13,7 +14,7 @@
         android:scaleType="centerCrop"
         android:visibility="gone" />
 
-    <!-- 渐变遮罩层：上深下浅，模拟毛玻璃 -->
+    <!-- 渐变遮罩层 -->
     <View
         android:id="@+id/v_overlay"
         android:layout_width="match_parent"
@@ -27,7 +28,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:padding="40dp">
+        android:padding="24dp">
 
         <!-- 顶部弹性空间 -->
         <View
@@ -35,58 +36,39 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- 科目信息 -->
-        <TextView
-            android:id="@+id/tv_subject_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="数学 — 高数"
-            android:textSize="15sp"
-            android:textColor="@color/text_tertiary"
-            android:layout_marginBottom="32dp" />
+        <!-- 圆形计时环 -->
+        <com.example.studytimer.CircularTimerView
+            android:id="@+id/circular_timer"
+            android:layout_width="280dp"
+            android:layout_height="280dp" />
 
-        <!-- 计时大数字（带微阴影增加立体感） -->
-        <TextView
-            android:id="@+id/tv_timer_display"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00:00"
-            android:textSize="64sp"
-            android:textColor="@color/blue_primary"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.05"
-            android:shadowColor="#336B9FC7"
-            android:shadowDx="0"
-            android:shadowDy="2"
-            android:shadowRadius="4" />
-
-        <!-- 分割细线 -->
+        <!-- 底部弹性空间 -->
         <View
-            android:layout_width="80dp"
-            android:layout_height="2dp"
-            android:background="@color/blue_pale"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="28dp" />
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
-        <!-- 按钮行 -->
+        <!-- 按钮行（玻璃卡片包裹） -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="60dp"
             android:orientation="horizontal"
             android:gravity="center"
-            android:weightSum="2">
+            android:background="@drawable/card_glass"
+            android:elevation="2dp"
+            android:padding="6dp">
 
             <Button
                 android:id="@+id/btn_pause_resume"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginEnd="12dp"
+                android:layout_marginEnd="6dp"
                 android:text="暂停"
                 android:textSize="16sp"
-                android:textColor="@color/white"
-                android:background="@drawable/btn_pill_primary" />
+                android:textStyle="bold"
+                android:stateListAnimator="@null"
+                android:elevation="0dp" />
 
             <Button
                 android:id="@+id/btn_end"
@@ -95,16 +77,11 @@
                 android:layout_weight="1"
                 android:text="结束"
                 android:textSize="16sp"
-                android:textColor="@color/error"
-                android:background="@drawable/btn_pill_danger" />
+                android:textStyle="bold"
+                android:stateListAnimator="@null"
+                android:elevation="0dp" />
 
         </LinearLayout>
-
-        <!-- 底部弹性空间 -->
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
 
         <!-- 底部格言 -->
         <TextView
@@ -115,6 +92,7 @@
             android:textSize="13sp"
             android:textColor="@color/text_tertiary"
             android:gravity="center"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp" />
 
     </LinearLayout>

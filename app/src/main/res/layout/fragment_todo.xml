@@ -1,82 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 待办页面：添加输入 → 待办列表 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 待办页面大改版：动态背景 + FAB + 卡片列表 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/background_light">
+    android:background="@color/bg_page">
 
-    <!-- ===== 顶部输入行 ===== -->
+    <!-- 动态背景层 -->
+    <com.example.studytimer.DynamicBackgroundView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 内容层 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:gravity="center_vertical"
-        android:background="@color/background_white">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/et_todo_input"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:hint="添加待办事项..."
-            android:textSize="15sp"
-            android:paddingHorizontal="12dp"
-            android:background="@android:drawable/editbox_background"
-            android:maxLines="1" />
-
-        <!-- 每日复选框 -->
-        <CheckBox
-            android:id="@+id/cb_daily"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="每日"
-            android:textSize="12sp"
-            android:layout_marginStart="4dp" />
-
-        <!-- 日期选择按钮 -->
+        <!-- 页面标题 -->
         <TextView
-            android:id="@+id/btn_pick_date"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="📅"
-            android:textSize="18sp"
-            android:gravity="center"
-            android:paddingHorizontal="4dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground" />
+            android:layout_height="wrap_content"
+            android:text="待办"
+            android:textSize="26sp"
+            android:textColor="@color/text_primary"
+            android:textStyle="bold"
+            android:padding="20dp"
+            android:paddingBottom="8dp" />
 
-        <Button
-            android:id="@+id/btn_add_todo"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
-            android:text="添加"
-            android:textSize="14sp" />
+        <!-- 待办列表 -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="80dp">
+
+            <LinearLayout
+                android:id="@+id/layout_todo_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </ScrollView>
 
     </LinearLayout>
 
-    <!-- 分割线 -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/blue_pale" />
+    <!-- 浮动添加按钮 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:src="@android:drawable/ic_input_add"
+        android:contentDescription="添加待办"
+        android:tint="@color/white"
+        android:elevation="6dp"
+        app:backgroundTint="@color/blue_primary"
+        app:fabSize="normal" />
 
-    <!-- ===== 待办列表（可滚动） ===== -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <LinearLayout
-            android:id="@+id/layout_todo_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="8dp" />
-
-    </ScrollView>
-
-</LinearLayout>
+</FrameLayout>

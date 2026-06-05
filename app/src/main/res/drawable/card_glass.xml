@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 玻璃拟态卡片背景：半透明白 + 白边框 + 大圆角 + 微阴影 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 阴影层 -->
+    <item
+        android:left="0dp"
+        android:top="2dp"
+        android:right="0dp"
+        android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/glass_shadow" />
+            <corners android:radius="20dp" />
+            <size android:height="4dp" />
+        </shape>
+    </item>
+    <!-- 玻璃主体 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#99FFFFFF" />
+            <stroke
+                android:width="0.5dp"
+                android:color="@color/glass_stroke" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+    <!-- 边缘高光（顶部细亮线） -->
+    <item android:top="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/glass_highlight" />
+            <corners android:radius="20dp" />
+            <size android:height="2dp" />
+        </shape>
+    </item>
+</layer-list>
