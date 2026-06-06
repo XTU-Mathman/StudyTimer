@@ -128,7 +128,6 @@ class CountdownRunningActivity : AppCompatActivity() {
         btnPauseResume.setOnClickListener {
             if (isPaused) {
                 isPaused = false
-                pausedRemaining -= System.currentTimeMillis() - startTimestamp
                 startTimestamp = System.currentTimeMillis()
                 handler.post(refreshRunnable)
                 btnPauseResume.text = "暂停"
@@ -151,6 +150,7 @@ class CountdownRunningActivity : AppCompatActivity() {
         handler.removeCallbacks(refreshRunnable)
         vibrate(500)
         saveRecord(targetMillis / 1000)
+        TodoStorage.checkAndUpdateStudyGoal(this)
         Toast.makeText(this, "⏰ 时间到！", Toast.LENGTH_LONG).show()
         MottoStorage.moveToNext(this)
         WhiteNoiseEngine.getInstance().stop()
@@ -171,6 +171,7 @@ class CountdownRunningActivity : AppCompatActivity() {
             StorageHelper.saveRecord(this, TimerRecord(
                 subjectGroup, subjectName, dateFormat.format(Date()), elapsed
             ))
+            TodoStorage.checkAndUpdateStudyGoal(this)
             Toast.makeText(this, "已记录：${formatDuration(elapsed)}", Toast.LENGTH_SHORT).show()
         }
         MottoStorage.moveToNext(this)

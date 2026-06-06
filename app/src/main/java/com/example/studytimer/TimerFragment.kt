@@ -60,25 +60,12 @@ class TimerFragment : Fragment() {
             if (checkedIds.isNotEmpty()) {
                 val chip = chipGroup.findViewById<Chip>(checkedIds[0])
                 val name = chip?.text?.toString() ?: return@setOnCheckedStateChangeListener
-                if (name == "+ 新增") {
-                    chipGroup.clearCheck()
-                    showAddGroupDialog()
-                } else {
-                    refreshSubjectChips(name)
-                }
+                refreshSubjectChips(name)
             }
         }
 
-        chipSubject.setOnCheckedStateChangeListener { _, checkedIds ->
-            if (checkedIds.isNotEmpty()) {
-                val chip = chipSubject.findViewById<Chip>(checkedIds[0])
-                val name = chip?.text?.toString() ?: return@setOnCheckedStateChangeListener
-                if (name == "+ 新增") {
-                    chipSubject.clearCheck()
-                    val groupName = getSelectedGroup()
-                    showAddSubjectDialog(groupName)
-                }
-            }
+        chipSubject.setOnCheckedStateChangeListener { _, _ ->
+            // 科目选择不需要额外处理
         }
 
         // 模式卡片选择
@@ -144,8 +131,10 @@ class TimerFragment : Fragment() {
         for (name in names) {
             chipGroup.addView(createChip(name))
         }
-        // 新增按钮
-        chipGroup.addView(createChip("+ 新增").apply { isCheckable = false })
+        chipGroup.addView(createChip("⚙ 管理").apply {
+            isCheckable = false
+            setOnClickListener { showGroupManageDialog() }
+        })
         if (names.isNotEmpty()) {
             (chipGroup.getChildAt(0) as? Chip)?.isChecked = true
         }
@@ -157,7 +146,10 @@ class TimerFragment : Fragment() {
         for (sub in subjects) {
             chipSubject.addView(createChip(sub))
         }
-        chipSubject.addView(createChip("+ 新增").apply { isCheckable = false })
+        chipSubject.addView(createChip("⚙ 管理").apply {
+            isCheckable = false
+            setOnClickListener { showSubjectManageDialog() }
+        })
         if (subjects.isNotEmpty()) {
             (chipSubject.getChildAt(0) as? Chip)?.isChecked = true
         }
@@ -211,12 +203,26 @@ class TimerFragment : Fragment() {
         if (checkedId == View.NO_ID) return ""
         val chip = chipSubject.findViewById<Chip>(checkedId) ?: return ""
         val name = chip.text.toString()
-        return if (name == "+ 新增") "" else name
+        return if (name == "⚙ 管理") "" else name
     }
 
-    // ==================== 新增对话框 ====================
+    // ==================== 科目集管理 ====================
 
-    private fun showAddGroupDialog() {
+    private fun showGroupManageDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("科目集管理")
+            .setItems(arrayOf("➕ 新增科目集", "🗑 删除科目集", "✏️ 重命名科目集")) { _, which ->
+                when (which) {
+                    0 -> showGroupAddDialog()
+                    1 -> showGroupDeleteDialog()
+                    2 -> showGroupRenameDialog()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showGroupAddDialog() {
         val input = EditText(requireContext()).apply {
             hint = "输入科目集名称"
             setPadding(32, 16, 32, 16)
@@ -232,10 +238,85 @@ class TimerFragment : Fragment() {
                     Toast.makeText(requireContext(), "已添加「$name」", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("取消", null).show()
+            .setNegativeButton("取消", null)
+            .show()
     }
 
-    private fun showAddSubjectDialog(groupName: String) {
+    private fun showGroupDeleteDialog() {
+        val names = SubjectData.getGroupNames()
+        if (names.isEmpty()) {
+            Toast.makeText(requireContext(), "暂无科目集", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择要删除的科目集")
+            .setItems(names.toTypedArray()) { _, which ->
+                val name = names[which]
+                AlertDialog.Builder(requireContext())
+                    .setTitle("确认删除")
+                    .setMessage("确定要删除科目集「$name」吗？\n（该科目集下的计时记录不会被删除）")
+                    .setPositiveButton("删除") { _, _ ->
+                        SubjectData.deleteGroup(requireContext(), name)
+                        refreshGroupChips()
+                        Toast.makeText(requireContext(), "已删除「$name」", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showGroupRenameDialog() {
+        val names = SubjectData.getGroupNames()
+        if (names.isEmpty()) {
+            Toast.makeText(requireContext(), "暂无科目集", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择要重命名的科目集")
+            .setItems(names.toTypedArray()) { _, which ->
+                val oldName = names[which]
+                val input = EditText(requireContext()).apply {
+                    setText(oldName)
+                    hint = "输入新名称"
+                    setPadding(32, 16, 32, 16)
+                }
+                AlertDialog.Builder(requireContext())
+                    .setTitle("重命名「$oldName」")
+                    .setView(input)
+                    .setPositiveButton("确定") { _, _ ->
+                        val newName = input.text.toString().trim()
+                        if (newName.isNotEmpty() && newName != oldName) {
+                            SubjectData.renameGroup(requireContext(), oldName, newName)
+                            refreshGroupChips()
+                            Toast.makeText(requireContext(), "已重命名为「$newName」", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    // ==================== 科目管理 ====================
+
+    private fun showSubjectManageDialog() {
+        val groupName = getSelectedGroup()
+        AlertDialog.Builder(requireContext())
+            .setTitle("「$groupName」科目管理")
+            .setItems(arrayOf("➕ 新增科目", "🗑 删除科目")) { _, which ->
+                when (which) {
+                    0 -> showSubjectAddDialog(groupName)
+                    1 -> showSubjectDeleteDialog(groupName)
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showSubjectAddDialog(groupName: String) {
         val input = EditText(requireContext()).apply {
             hint = "输入科目名称"
             setPadding(32, 16, 32, 16)
@@ -251,6 +332,32 @@ class TimerFragment : Fragment() {
                     Toast.makeText(requireContext(), "已添加「$name」", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("取消", null).show()
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showSubjectDeleteDialog(groupName: String) {
+        val subjects = SubjectData.getSubjectsByGroup(groupName)
+        if (subjects.isEmpty()) {
+            Toast.makeText(requireContext(), "该科目集下暂无科目", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择要删除的科目")
+            .setItems(subjects.toTypedArray()) { _, which ->
+                val name = subjects[which]
+                AlertDialog.Builder(requireContext())
+                    .setTitle("确认删除")
+                    .setMessage("确定要删除科目「$name」吗？")
+                    .setPositiveButton("删除") { _, _ ->
+                        SubjectData.deleteSubject(requireContext(), groupName, name)
+                        refreshSubjectChips(groupName)
+                        Toast.makeText(requireContext(), "已删除「$name」", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 }

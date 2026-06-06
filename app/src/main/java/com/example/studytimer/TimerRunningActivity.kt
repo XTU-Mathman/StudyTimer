@@ -157,6 +157,8 @@ class TimerRunningActivity : AppCompatActivity() {
             StorageHelper.saveRecord(this, TimerRecord(
                 subjectGroup, subjectName, todayDate, totalSeconds
             ))
+            // 桥接：检查内置学习目标
+            TodoStorage.checkAndUpdateStudyGoal(this)
             Toast.makeText(this, "已记录：${formatMillis(totalMillis)}", Toast.LENGTH_SHORT).show()
         }
         MottoStorage.moveToNext(this)

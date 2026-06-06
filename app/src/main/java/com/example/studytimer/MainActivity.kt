@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         // 初始化科目数据和每日待办重置
         SubjectData.init(this)
         TodoStorage.resetDailyIfNeeded(this)
+        TodoStorage.initStudyGoal(this)
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 学习目标卡片：玻璃拟态 + 蓝色左边框强调 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 阴影 -->
+    <item
+        android:left="0dp"
+        android:top="2dp"
+        android:right="0dp"
+        android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/glass_shadow" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+    <!-- 玻璃主体 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#99FFFFFF" />
+            <stroke
+                android:width="0.5dp"
+                android:color="@color/glass_stroke" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+    <!-- 左侧蓝色强调条 -->
+    <item
+        android:right="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/blue_primary" />
+            <corners
+                android:topLeftRadius="20dp"
+                android:bottomLeftRadius="20dp"
+                android:topRightRadius="0dp"
+                android:bottomRightRadius="0dp" />
+            <size android:width="4dp" />
+        </shape>
+    </item>
+</layer-list>
