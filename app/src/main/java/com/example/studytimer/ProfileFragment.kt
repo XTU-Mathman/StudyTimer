@@ -33,6 +33,11 @@ class ProfileFragment : Fragment() {
     // 音乐试听播放器（类级别管理，避免泄漏）
     private var previewPlayer: android.media.MediaPlayer? = null
 
+    // 对话框引用（防止堆叠）
+    private var noiseDialog: AlertDialog? = null
+    private var musicDialog: AlertDialog? = null
+    private var pureDialog: AlertDialog? = null
+
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -118,6 +123,9 @@ class ProfileFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         releasePreviewPlayer()
+        noiseDialog?.dismiss(); noiseDialog = null
+        musicDialog?.dismiss(); musicDialog = null
+        pureDialog?.dismiss(); pureDialog = null
     }
 
     /** 安全释放试听播放器 */
@@ -477,6 +485,8 @@ class ProfileFragment : Fragment() {
         val ctx = requireContext()
         val currentType = WhiteNoiseStorage.getSelectedType(ctx)
         val enabled = WhiteNoiseStorage.isEnabled(ctx)
+        noiseDialog?.dismiss()
+        noiseDialog = null
 
         val contentLayout = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -577,12 +587,13 @@ class ProfileFragment : Fragment() {
         }
         contentLayout.addView(tvHint)
 
-        AlertDialog.Builder(ctx)
+        noiseDialog = AlertDialog.Builder(ctx)
             .setTitle("白噪音")
             .setView(contentLayout)
             .setNegativeButton("关闭") { _, _ -> }
             .setOnDismissListener {
                 WhiteNoiseEngine.getInstance().stop()
+                noiseDialog = null
             }
             .show()
     }
@@ -607,6 +618,8 @@ class ProfileFragment : Fragment() {
         val enabled = MusicStorage.isEnabled(ctx)
         // 先释放旧的试听播放器
         releasePreviewPlayer()
+        musicDialog?.dismiss()
+        musicDialog = null
 
         val contentLayout = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -732,11 +745,14 @@ class ProfileFragment : Fragment() {
             gravity = android.view.Gravity.CENTER
         })
 
-        AlertDialog.Builder(ctx)
+        musicDialog = AlertDialog.Builder(ctx)
             .setTitle("音乐")
             .setView(contentLayout)
             .setNegativeButton("关闭") { _, _ -> }
-            .setOnDismissListener { releasePreviewPlayer() }
+            .setOnDismissListener {
+                releasePreviewPlayer()
+                musicDialog = null
+            }
             .show()
     }
 
@@ -746,6 +762,8 @@ class ProfileFragment : Fragment() {
     private fun showPureModeDialog() {
         val ctx = requireContext()
         val enabled = PureModeStorage.isEnabled(ctx)
+        pureDialog?.dismiss()
+        pureDialog = null
 
         val contentLayout = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -781,10 +799,10 @@ class ProfileFragment : Fragment() {
         })
         contentLayout.addView(toggleRow)
 
-        AlertDialog.Builder(ctx)
+        pureDialog = AlertDialog.Builder(ctx)
             .setTitle("纯净模式")
             .setView(contentLayout)
-            .setNegativeButton("关闭") { _, _ -> }
+            .setNegativeButton("关闭") { _, _ -> pureDialog = null }
             .show()
     }
 
