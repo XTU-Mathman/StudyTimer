@@ -42,6 +42,12 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
+        <!-- 番茄钟全屏页面 -->
+        <activity
+            android:name=".PomodoroRunningActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="false" />
+
     </application>
 
 </manifest>

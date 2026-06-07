@@ -16,9 +16,9 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 
 /**
- * 计时主页大改版
+ * 计时主页
  * - ChipGroup 替代 Spinner 选科目
- * - 双卡片（正计时/倒计时）替代分段按钮
+ * - 三卡片（正计时/倒计时/番茄钟）
  * - 大号开始按钮
  */
 class TimerFragment : Fragment() {
@@ -27,12 +27,19 @@ class TimerFragment : Fragment() {
     private lateinit var chipSubject: ChipGroup
     private lateinit var cardCountUp: View
     private lateinit var cardCountDown: View
+    private lateinit var cardPomodoro: View
     private lateinit var layoutCountdown: View
+    private lateinit var layoutPomodoro: View
     private lateinit var etHours: EditText
     private lateinit var etMinutes: EditText
+    private lateinit var etPomoWork: EditText
+    private lateinit var etPomoBreak: EditText
+    private lateinit var etPomoLongBreak: EditText
+    private lateinit var etPomoRounds: EditText
     private lateinit var btnStart: Button
 
-    private var isCountUpMode = true
+    // mode: 0=正计时, 1=倒计时, 2=番茄钟
+    private var currentMode = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -47,9 +54,15 @@ class TimerFragment : Fragment() {
         chipSubject = view.findViewById(R.id.chip_subject)
         cardCountUp = view.findViewById(R.id.card_count_up)
         cardCountDown = view.findViewById(R.id.card_count_down)
+        cardPomodoro = view.findViewById(R.id.card_pomodoro)
         layoutCountdown = view.findViewById(R.id.layout_countdown)
+        layoutPomodoro = view.findViewById(R.id.layout_pomodoro)
         etHours = view.findViewById(R.id.et_hours)
         etMinutes = view.findViewById(R.id.et_minutes)
+        etPomoWork = view.findViewById(R.id.et_pomo_work)
+        etPomoBreak = view.findViewById(R.id.et_pomo_break)
+        etPomoLongBreak = view.findViewById(R.id.et_pomo_long_break)
+        etPomoRounds = view.findViewById(R.id.et_pomo_rounds)
         btnStart = view.findViewById(R.id.btn_start)
 
         // 加载科目集 Chip
@@ -69,9 +82,10 @@ class TimerFragment : Fragment() {
         }
 
         // 模式卡片选择
-        selectMode(true)
-        cardCountUp.setOnClickListener { selectMode(true) }
-        cardCountDown.setOnClickListener { selectMode(false) }
+        selectMode(0)
+        cardCountUp.setOnClickListener { selectMode(0) }
+        cardCountDown.setOnClickListener { selectMode(1) }
+        cardPomodoro.setOnClickListener { selectMode(2) }
 
         // 开始按钮
         btnStart.setOnClickListener {
@@ -81,37 +95,61 @@ class TimerFragment : Fragment() {
                 Toast.makeText(requireContext(), "请选择科目", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (isCountUpMode) {
-                startActivity(Intent(requireContext(), TimerRunningActivity::class.java).apply {
+            when (currentMode) {
+                0 -> startActivity(Intent(requireContext(), TimerRunningActivity::class.java).apply {
                     putExtra("subject_group", group)
                     putExtra("subject_name", subject)
                 })
-            } else {
-                val h = etHours.text.toString().toIntOrNull() ?: 0
-                val m = etMinutes.text.toString().toIntOrNull() ?: 0
-                if (h == 0 && m == 0) {
-                    Toast.makeText(requireContext(), "请设置至少 1 分钟", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
+                1 -> {
+                    val h = etHours.text.toString().toIntOrNull() ?: 0
+                    val m = etMinutes.text.toString().toIntOrNull() ?: 0
+                    if (h == 0 && m == 0) {
+                        Toast.makeText(requireContext(), "请设置至少 1 分钟", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                    startActivity(Intent(requireContext(), CountdownRunningActivity::class.java).apply {
+                        putExtra("subject_group", group)
+                        putExtra("subject_name", subject)
+                        putExtra("total_minutes", h * 60 + m)
+                    })
                 }
-                startActivity(Intent(requireContext(), CountdownRunningActivity::class.java).apply {
-                    putExtra("subject_group", group)
-                    putExtra("subject_name", subject)
-                    putExtra("total_minutes", h * 60 + m)
-                })
+                2 -> {
+                    val workMin = etPomoWork.text.toString().toIntOrNull() ?: 25
+                    val breakMin = etPomoBreak.text.toString().toIntOrNull() ?: 5
+                    val longBreakMin = etPomoLongBreak.text.toString().toIntOrNull() ?: 15
+                    val rounds = etPomoRounds.text.toString().toIntOrNull() ?: 4
+                    if (workMin < 1) {
+                        Toast.makeText(requireContext(), "专注时长至少 1 分钟", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                    startActivity(Intent(requireContext(), PomodoroRunningActivity::class.java).apply {
+                        putExtra("subject_group", group)
+                        putExtra("subject_name", subject)
+                        putExtra("work_minutes", workMin)
+                        putExtra("break_minutes", breakMin)
+                        putExtra("long_break_minutes", longBreakMin)
+                        putExtra("total_rounds", rounds)
+                    })
+                }
             }
         }
     }
 
-    private fun selectMode(isUp: Boolean) {
-        isCountUpMode = isUp
+    private fun selectMode(mode: Int) {
+        currentMode = mode
         val selectedBg = requireContext().getDrawable(R.drawable.btn_pill_primary)
         val defaultBg = requireContext().getDrawable(R.drawable.card_glass)
 
-        cardCountUp.background = if (isUp) selectedBg else defaultBg
-        cardCountDown.background = if (!isUp) selectedBg else defaultBg
+        cardCountUp.background = if (mode == 0) selectedBg else defaultBg
+        cardCountDown.background = if (mode == 1) selectedBg else defaultBg
+        cardPomodoro.background = if (mode == 2) selectedBg else defaultBg
 
         // 弹性缩放动画
-        val target = if (isUp) cardCountUp else cardCountDown
+        val target = when (mode) {
+            0 -> cardCountUp
+            1 -> cardCountDown
+            else -> cardPomodoro
+        }
         ObjectAnimator.ofFloat(target, View.SCALE_X, 1f, 1.05f, 1f).apply {
             duration = 400; interpolator = OvershootInterpolator(1.5f); start()
         }
@@ -119,8 +157,13 @@ class TimerFragment : Fragment() {
             duration = 400; interpolator = OvershootInterpolator(1.5f); start()
         }
 
-        layoutCountdown.visibility = if (isUp) View.GONE else View.VISIBLE
-        btnStart.text = if (isUp) "开始专注" else "开始倒计时"
+        layoutCountdown.visibility = if (mode == 1) View.VISIBLE else View.GONE
+        layoutPomodoro.visibility = if (mode == 2) View.VISIBLE else View.GONE
+        btnStart.text = when (mode) {
+            0 -> "开始专注"
+            1 -> "开始倒计时"
+            else -> "开始番茄钟"
+        }
     }
 
     // ==================== ChipGroup 科目管理 ====================
