@@ -146,19 +146,21 @@ class TimerRunningActivity : AppCompatActivity() {
         btnEnd.setOnClickListener { saveAndFinish() }
 
         // 返回键拦截（替代已弃用的 onBackPressed）
-        onBackPressedDispatcher.addCallback(this) {
-            AlertDialog.Builder(this@TimerRunningActivity)
-                .setTitle("放弃计时？")
-                .setMessage("计时仍在进行，确定要放弃吗？")
-                .setPositiveButton("确定放弃") { _, _ ->
-                    finished = true
-                    handler.removeCallbacks(refreshRunnable)
-                    WhiteNoiseEngine.getInstance().stop()
-                    stopMusic()
-                    finish()
-                }
-                .setNegativeButton("继续计时", null).show()
-        }
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                AlertDialog.Builder(this@TimerRunningActivity)
+                    .setTitle("放弃计时？")
+                    .setMessage("计时仍在进行，确定要放弃吗？")
+                    .setPositiveButton("确定放弃") { _, _ ->
+                        finished = true
+                        handler.removeCallbacks(refreshRunnable)
+                        WhiteNoiseEngine.getInstance().stop()
+                        stopMusic()
+                        finish()
+                    }
+                    .setNegativeButton("继续计时", null).show()
+            }
+        })
     }
 
     private fun saveAndFinish() {
