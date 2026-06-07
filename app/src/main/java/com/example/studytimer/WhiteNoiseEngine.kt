@@ -31,6 +31,9 @@ class WhiteNoiseEngine {
     private var playThread: Thread? = null
     private val random = Random()
 
+    /** 白噪音音量 0f..1f */
+    @Volatile var volume: Float = 0.7f
+
     companion object {
         const val SAMPLE_RATE = 22050
         private val instance = WhiteNoiseEngine()
@@ -85,6 +88,12 @@ class WhiteNoiseEngine {
                         NoiseType.STREAM -> fillStream(buffer, state)
                         NoiseType.WIND -> fillWind(buffer, state)
                         NoiseType.CICADA -> fillCicada(buffer, state)
+                    }
+                    // 应用音量
+                    if (volume < 1f) {
+                        for (i in buffer.indices) {
+                            buffer[i] = (buffer[i] * volume).toInt().coerceIn(-32768, 32767).toShort()
+                        }
                     }
                     localTrack.write(buffer, 0, buffer.size)
                 }

@@ -113,6 +113,11 @@ class ProfileFragment : Fragment() {
             showPureModeDialog()
         }
 
+        // 音频设置入口
+        view.findViewById<View>(R.id.item_audio_settings).setOnClickListener {
+            showAudioSettingsDialog()
+        }
+
         updateBgUI()
         updateCheckinStatus()
         updateNoiseUI()
@@ -803,6 +808,104 @@ class ProfileFragment : Fragment() {
             .setTitle("纯净模式")
             .setView(contentLayout)
             .setNegativeButton("关闭") { _, _ -> pureDialog = null }
+            .show()
+    }
+
+    private fun showAudioSettingsDialog() {
+        val ctx = requireContext()
+        val dp = resources.displayMetrics.density
+
+        val layout = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * dp).toInt(), (16 * dp).toInt(), (20 * dp).toInt(), (8 * dp).toInt())
+        }
+
+        // 白噪音音量
+        layout.addView(TextView(ctx).apply {
+            text = "白噪音音量：${AudioSettingsStorage.getNoiseVolume(ctx)}%"
+            textSize = 14f
+            setTextColor(Color.parseColor("#FF2D2D2D"))
+        })
+        val noiseSlider = android.widget.SeekBar(ctx).apply {
+            max = 100
+            progress = AudioSettingsStorage.getNoiseVolume(ctx)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (16 * dp).toInt() }
+        }
+        layout.addView(noiseSlider)
+
+        // 音乐音量
+        layout.addView(TextView(ctx).apply {
+            text = "音乐音量：${AudioSettingsStorage.getMusicVolume(ctx)}%"
+            textSize = 14f
+            setTextColor(Color.parseColor("#FF2D2D2D"))
+        })
+        val musicSlider = android.widget.SeekBar(ctx).apply {
+            max = 100
+            progress = AudioSettingsStorage.getMusicVolume(ctx)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (16 * dp).toInt() }
+        }
+        layout.addView(musicSlider)
+
+        // 淡入时长
+        layout.addView(TextView(ctx).apply {
+            text = "淡入效果"
+            textSize = 14f
+            setTextColor(Color.parseColor("#FF2D2D2D"))
+            setPadding(0, (8 * dp).toInt(), 0, (8 * dp).toInt())
+        })
+        val fadeOptions = arrayOf("关闭", "15秒", "30秒", "60秒")
+        val fadeValues = intArrayOf(0, 15, 30, 60)
+        val currentFade = AudioSettingsStorage.getFadeInSeconds(ctx)
+        val fadeIndex = fadeValues.indexOf(currentFade).coerceAtLeast(0)
+        val fadeGroup = android.widget.RadioGroup(ctx).apply {
+            orientation = android.widget.RadioGroup.HORIZONTAL
+        }
+        for (i in fadeOptions.indices) {
+            fadeGroup.addView(android.widget.RadioButton(ctx).apply {
+                text = fadeOptions[i]
+                textSize = 13f
+                isChecked = i == fadeIndex
+                id = i
+                layoutParams = android.widget.RadioGroup.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        }
+        layout.addView(fadeGroup)
+
+        // 实时更新标签
+        noiseSlider.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                (layout.getChildAt(0) as? TextView)?.text = "白噪音音量：${progress}%"
+            }
+            override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
+        })
+        musicSlider.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                (layout.getChildAt(2) as? TextView)?.text = "音乐音量：${progress}%"
+            }
+            override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
+        })
+
+        AlertDialog.Builder(ctx)
+            .setTitle("🔊 音频设置")
+            .setView(layout)
+            .setPositiveButton("确定") { _, _ ->
+                AudioSettingsStorage.setNoiseVolume(ctx, noiseSlider.progress)
+                AudioSettingsStorage.setMusicVolume(ctx, musicSlider.progress)
+                val checkedId = fadeGroup.checkedRadioButtonId
+                if (checkedId >= 0 && checkedId < fadeValues.size) {
+                    AudioSettingsStorage.setFadeInSeconds(ctx, fadeValues[checkedId])
+                }
+                Toast.makeText(ctx, "音频设置已保存", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
             .show()
     }
 

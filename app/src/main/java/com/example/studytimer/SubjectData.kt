@@ -10,7 +10,8 @@ import org.json.JSONArray
  */
 data class SubjectGroup(
     val name: String,
-    val subjects: MutableList<String>  // 改为 MutableList，支持增删
+    val subjects: MutableList<String>,
+    val color: String = ""  // 十六进制颜色，如 "#6BA4D1"，空=自动分配
 )
 
 /**
@@ -64,6 +65,50 @@ object SubjectData {
      * 获取所有科目集的名称列表
      */
     fun getGroupNames(): List<String> = groups.map { it.name }
+
+    /**
+     * 获取科目集的颜色（自动分配 + 持久化）
+     */
+    private val morandiPalette = intArrayOf(
+        0xFF6BA4D1.toInt(),  // 雾蓝
+        0xFF8B82B8.toInt(),  // 靛紫
+        0xFFC496A8.toInt(),  // 莫兰迪粉
+        0xFFD4A574.toInt(),  // 暖橙
+        0xFF6DB89A.toInt(),  // 莫兰迪绿
+        0xFF6BA8A8.toInt(),  // 青绿
+        0xFFA088B8.toInt(),  // 淡紫
+        0xFFD4726A.toInt(),  // 莫兰迪红
+        0xFFA8CBE3.toInt(),  // 天蓝
+        0xFFB8A882.toInt()   // 卡其
+    )
+
+    fun getGroupColor(groupName: String): Int {
+        val group = groups.find { it.name == groupName }
+        return if (group != null && group.color.isNotEmpty()) {
+            try { android.graphics.Color.parseColor(group.color) } catch (_: Exception) {
+                morandiPalette[groups.indexOf(group) % morandiPalette.size]
+            }
+        } else {
+            val idx = groups.indexOf(group).coerceAtLeast(0)
+            morandiPalette[idx % morandiPalette.size]
+        }
+    }
+
+    /**
+     * 设置科目集颜色
+     */
+    fun setGroupColor(context: Context, groupName: String, colorHex: String) {
+        groups.find { it.name == groupName }?.let { group ->
+            val idx = groups.indexOf(group)
+            groups[idx] = group.copy(color = colorHex)
+            save(context)
+        }
+    }
+
+    /** 获取所有科目集名称→颜色映射 */
+    fun getGroupColorMap(): Map<String, Int> {
+        return groups.associate { it.name to getGroupColor(it.name) }
+    }
 
     /**
      * 根据科目集名称获取该科目集下的科目列表
@@ -129,6 +174,7 @@ object SubjectData {
         for (group in groups) {
             val groupJson = org.json.JSONObject()
             groupJson.put("name", group.name)
+            groupJson.put("color", group.color)
             val subjectsArray = JSONArray()
             for (s in group.subjects) {
                 subjectsArray.put(s)
@@ -151,12 +197,13 @@ object SubjectData {
         for (i in 0 until jsonArray.length()) {
             val obj = jsonArray.getJSONObject(i)
             val name = obj.getString("name")
+            val color = obj.optString("color", "")
             val subjectsArray = obj.getJSONArray("subjects")
             val subjects = mutableListOf<String>()
             for (j in 0 until subjectsArray.length()) {
                 subjects.add(subjectsArray.getString(j))
             }
-            result.add(SubjectGroup(name, subjects))
+            result.add(SubjectGroup(name, subjects, color))
         }
         return result
     }

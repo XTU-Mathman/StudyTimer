@@ -34,9 +34,11 @@ class StatsFragment : Fragment() {
     private lateinit var chartPieContainer: LinearLayout
     private lateinit var chartLineContainer: LinearLayout
     private lateinit var chartHeatmapContainer: LinearLayout
+    private lateinit var chartCompareContainer: LinearLayout
     private lateinit var pieChart: PieChartView
     private lateinit var lineChart: LineChartView
     private var heatmapView: HeatmapCalendarView? = null
+    private var compareView: CompareBarView? = null
 
     // ==================== 状态 ====================
     private var currentMode = "day"  // 当前模式：day / week / month
@@ -66,6 +68,7 @@ class StatsFragment : Fragment() {
         chartPieContainer = view.findViewById(R.id.chart_pie_container)
         chartLineContainer = view.findViewById(R.id.chart_line_container)
         chartHeatmapContainer = view.findViewById(R.id.chart_heatmap_container)
+        chartCompareContainer = view.findViewById(R.id.chart_compare_container)
 
         // ---------- 2. 创建图表控件并添加到容器 ----------
         // 扇形图（所有模式都显示）
@@ -124,6 +127,8 @@ class StatsFragment : Fragment() {
         chartPieContainer.visibility = if (mode != "year") View.VISIBLE else View.GONE
         // 热力图：仅年模式显示
         chartHeatmapContainer.visibility = if (mode == "year") View.VISIBLE else View.GONE
+        // 对比图：周/月模式显示
+        chartCompareContainer.visibility = if (mode == "week" || mode == "month") View.VISIBLE else View.GONE
         // 日期导航：年模式隐藏
         val dateNav = view?.findViewById<View>(R.id.btn_prev)?.parent as? View
         dateNav?.visibility = if (mode == "year") View.GONE else View.VISIBLE
@@ -273,12 +278,16 @@ class StatsFragment : Fragment() {
 
         // 10. 更新扇形图：传入科目名->秒数列表
         val pieData = sortedEntries.map { (name, seconds) -> name to seconds }
+        pieChart.subjectColors = SubjectData.getGroupColorMap()
         pieChart.setData(pieData)
 
         // 11. 更新折线图：仅在周/月模式有数据
         if (currentMode != "day") {
             val lineData = prepareLineChartData(allRecords)
             lineChart.setData(lineData)
+
+            // 更新对比图
+            updateCompareData(allRecords)
         }
     }
 
@@ -385,12 +394,13 @@ class StatsFragment : Fragment() {
 
     /**
      * 创建一行科目统计视图
-     * @param name 科目名称（如"数学 - 高数"）
-     * @param seconds 该科目的计时秒数
-     * @param maxSeconds 所有科目中的最大秒数（用于计算进度条比例）
      */
     private fun createStatRow(name: String, seconds: Long, maxSeconds: Long): View {
         val dp = resources.displayMetrics.density
+        // 从科目名提取科目集名（格式："科目集 - 科目"）
+        val groupName = name.split(" - ").firstOrNull()?.trim() ?: ""
+        val subjectColor = if (groupName.isNotEmpty()) SubjectData.getGroupColor(groupName)
+            else resources.getColor(R.color.blue_primary, null)
 
         // 外层容器 — 玻璃卡片
         val row = LinearLayout(requireContext()).apply {
@@ -410,6 +420,17 @@ class StatsFragment : Fragment() {
             gravity = android.view.Gravity.CENTER_VERTICAL
         }
 
+        // 颜色圆点
+        headerRow.addView(View(requireContext()).apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(subjectColor)
+            }
+            layoutParams = LinearLayout.LayoutParams((10 * dp).toInt(), (10 * dp).toInt()).apply {
+                marginEnd = (8 * dp).toInt()
+            }
+        })
+
         val tvName = TextView(requireContext()).apply {
             text = name
             textSize = 14f
@@ -421,7 +442,7 @@ class StatsFragment : Fragment() {
         val tvDuration = TextView(requireContext()).apply {
             text = formatDuration(seconds)
             textSize = 14f
-            setTextColor(resources.getColor(R.color.blue_primary, null))
+            setTextColor(subjectColor)
             paint.isFakeBoldText = true
         }
         headerRow.addView(tvDuration)
@@ -443,10 +464,7 @@ class StatsFragment : Fragment() {
         val bar = View(requireContext()).apply {
             val barBg = android.graphics.drawable.GradientDrawable().apply {
                 orientation = android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT
-                colors = intArrayOf(
-                    resources.getColor(R.color.blue_primary, null),
-                    resources.getColor(R.color.chart_indigo, null)
-                )
+                colors = intArrayOf(subjectColor, (subjectColor and 0x00FFFFFF) or 0x88000000.toInt())
                 cornerRadius = 3f * dp
             }
             background = barBg
@@ -484,6 +502,52 @@ class StatsFragment : Fragment() {
             result[r.date] = (result[r.date] ?: 0) + (r.durationSeconds / 60).toInt()
         }
         return result
+    }
+
+    /**
+     * 生成对比数据：当前周期 vs 上一周期
+     */
+    private fun updateCompareData(allRecords: List<TimerRecord>) {
+        // 获取上一周期的时间范围
+        val prevCal = currentCalendar.clone() as Calendar
+        when (currentMode) {
+            "week" -> prevCal.add(Calendar.WEEK_OF_YEAR, -1)
+            "month" -> prevCal.add(Calendar.MONTH, -1)
+        }
+        val savedCal = currentCalendar.clone() as Calendar
+        currentCalendar = prevCal
+        val prevRecords = filterRecords(allRecords)
+        currentCalendar = savedCal as Calendar
+
+        val currentRecords = filterRecords(allRecords)
+
+        // 按科目集聚合
+        val currentMap = mutableMapOf<String, Long>()
+        for (r in currentRecords) {
+            currentMap[r.subjectGroup] = (currentMap[r.subjectGroup] ?: 0) + r.durationSeconds
+        }
+        val prevMap = mutableMapOf<String, Long>()
+        for (r in prevRecords) {
+            prevMap[r.subjectGroup] = (prevMap[r.subjectGroup] ?: 0) + r.durationSeconds
+        }
+
+        val allGroups = (currentMap.keys + prevMap.keys).sorted()
+        val colorMap = SubjectData.getGroupColorMap()
+
+        val compareItems = allGroups.map { group ->
+            CompareBarView.CompareItem(
+                name = group,
+                currentSeconds = currentMap[group] ?: 0,
+                previousSeconds = prevMap[group] ?: 0,
+                color = colorMap[group] ?: resources.getColor(R.color.blue_primary, null)
+            )
+        }
+
+        if (compareView == null) {
+            compareView = CompareBarView(requireContext())
+            chartCompareContainer.addView(compareView)
+        }
+        compareView!!.setData(compareItems)
     }
 
     /**

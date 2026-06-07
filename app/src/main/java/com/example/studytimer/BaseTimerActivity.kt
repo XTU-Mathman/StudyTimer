@@ -2,6 +2,8 @@ package com.example.studytimer
 
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
@@ -60,6 +62,7 @@ abstract class BaseTimerActivity : AppCompatActivity() {
         if (WhiteNoiseStorage.isEnabled(this)) {
             val type = WhiteNoiseStorage.getSelectedType(this)
             if (type != null) {
+                WhiteNoiseEngine.getInstance().volume = AudioSettingsStorage.getNoiseVolume(this) / 100f
                 WhiteNoiseEngine.getInstance().play(type)
             }
         }
@@ -68,17 +71,40 @@ abstract class BaseTimerActivity : AppCompatActivity() {
     protected fun startMusicIfEnabled() {
         if (MusicStorage.isEnabled(this)) {
             val track = MusicStorage.getSelectedTrack(this) ?: return
+            val targetVolume = AudioSettingsStorage.getMusicVolume(this) / 100f
+            val fadeInSec = AudioSettingsStorage.getFadeInSeconds(this)
             try {
                 mediaPlayer = MediaPlayer().apply {
                     setDataSource(track.path)
                     prepare()
                     isLooping = true
-                    start()
+                    if (fadeInSec > 0) {
+                        setVolume(0f, 0f)
+                        start()
+                        fadeInVolume(targetVolume, fadeInSec * 1000L)
+                    } else {
+                        setVolume(targetVolume, targetVolume)
+                        start()
+                    }
                 }
             } catch (_: Exception) {
                 mediaPlayer?.release()
                 mediaPlayer = null
             }
+        }
+    }
+
+    private fun fadeInVolume(target: Float, durationMs: Long) {
+        val steps = 20
+        val interval = durationMs / steps
+        val handler = Handler(Looper.getMainLooper())
+        for (i in 1..steps) {
+            handler.postDelayed({
+                try {
+                    val v = target * i / steps
+                    mediaPlayer?.setVolume(v, v)
+                } catch (_: Exception) {}
+            }, interval * i)
         }
     }
 

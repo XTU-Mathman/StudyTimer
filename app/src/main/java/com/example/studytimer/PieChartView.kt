@@ -28,6 +28,9 @@ class PieChartView @JvmOverloads constructor(
         Color.parseColor("#FFA8CBE3")
     )
 
+    /** 科目颜色映射（优先使用） */
+    var subjectColors: Map<String, Int> = emptyMap()
+
     private var data: List<Pair<String, Long>> = emptyList()
     private var animProgress = 1f
     private var selectedIndex = -1  // 触摸高亮的扇区索引
@@ -196,7 +199,7 @@ class PieChartView @JvmOverloads constructor(
             if (available <= 0f) break
 
             val sweepAngle = minOf(fullSweep, available)
-            arcPaint.color = colors[i % colors.size]
+            arcPaint.color = getSubjectColor(i, data[i].first)
 
             // 高亮弹出
             if (i == selectedIndex && highlightProgress > 0f) {
@@ -261,11 +264,19 @@ class PieChartView @JvmOverloads constructor(
         for (i in data.indices) {
             val (name, value) = data[i]
             val percent = (value / total * 100).toInt()
-            legendDotPaint.color = colors[i % colors.size]
+            legendDotPaint.color = getSubjectColor(i, name)
             canvas.drawCircle(legendX + 6f * density, legendY - 4f * density, 5f * density, legendDotPaint)
             val displayName = if (name.length > 10) name.take(10) + "…" else name
             canvas.drawText("$displayName  $percent%", legendX + 16f * density, legendY, legendPaint)
             legendY += legendSpacing
         }
+    }
+
+    private fun getSubjectColor(index: Int, name: String): Int {
+        // 优先使用科目颜色映射
+        val groupName = name.split(" - ").firstOrNull()?.trim() ?: ""
+        val mapped = subjectColors[groupName]
+        if (mapped != null) return mapped
+        return colors[index % colors.size]
     }
 }
