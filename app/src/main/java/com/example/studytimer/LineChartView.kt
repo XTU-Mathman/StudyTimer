@@ -20,7 +20,7 @@ class LineChartView @JvmOverloads constructor(
     private var animProgress = 1f  // 0..1
 
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FF6B9FC7")
+        color = Color.parseColor("#FF6BA4D1")
         strokeWidth = 6f
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
@@ -28,7 +28,7 @@ class LineChartView @JvmOverloads constructor(
     }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FF6B9FC7")
+        color = Color.parseColor("#FF6BA4D1")
         style = Paint.Style.FILL
     }
     private val dotStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -48,12 +48,12 @@ class LineChartView @JvmOverloads constructor(
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = 24f
-        color = Color.parseColor("#FF8B8580")
+        color = Color.parseColor("#FF78716C")
         textAlign = Paint.Align.CENTER
     }
     private val yLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = 24f
-        color = Color.parseColor("#FF8B8580")
+        color = Color.parseColor("#FF78716C")
         textAlign = Paint.Align.RIGHT
     }
     private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -149,8 +149,8 @@ class LineChartView @JvmOverloads constructor(
 
             val gradient = LinearGradient(
                 0f, chartTop, 0f, chartBottom,
-                Color.parseColor("#406B9FC7"),
-                Color.parseColor("#086B9FC7"),
+                Color.parseColor("#406BA4D1"),
+                Color.parseColor("#086BA4D1"),
                 Shader.TileMode.CLAMP
             )
             fillPaint.shader = gradient

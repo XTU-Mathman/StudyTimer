@@ -142,7 +142,7 @@ class ProfileFragment : Fragment() {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         inputRow.addView(etInput)
-        val btnAdd = makeBtn("添加", "#FF6B9FC7") {
+        val btnAdd = makeBtn("添加", "#FF6BA4D1") {
             val text = etInput.text.toString().trim()
             if (text.isNotEmpty()) {
                 MottoStorage.add(ctx, text)
@@ -182,7 +182,7 @@ class ProfileFragment : Fragment() {
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 row.addView(tv)
-                val btnEdit = makeBtn("改", "#FF6B9FC7") {
+                val btnEdit = makeBtn("改", "#FF6BA4D1") {
                     showEditDialog(ctx, idx, motto) { refreshList() }
                 }
                 row.addView(btnEdit)
@@ -235,7 +235,7 @@ class ProfileFragment : Fragment() {
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 row.addView(tv)
-                val btnEdit = makeBtn("改", "#FF6B9FC7") {
+                val btnEdit = makeBtn("改", "#FF6BA4D1") {
                     showEditDialog(requireContext(), idx, motto) {
                         refreshMottoContent(contentLayout)
                     }
@@ -328,7 +328,7 @@ class ProfileFragment : Fragment() {
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 12)
         }
-        val btnPrev = makeBtn("◀", "#FF6B9FC7") {
+        val btnPrev = makeBtn("◀", "#FF6BA4D1") {
             checkinCalendar.add(Calendar.DAY_OF_YEAR, -1)
             refreshList()
         }
@@ -343,7 +343,7 @@ class ProfileFragment : Fragment() {
         }
         dateNav.addView(tvDate)
 
-        val btnNext = makeBtn("▶", "#FF6B9FC7") {
+        val btnNext = makeBtn("▶", "#FF6BA4D1") {
             checkinCalendar.add(Calendar.DAY_OF_YEAR, 1)
             refreshList()
         }
@@ -391,7 +391,7 @@ class ProfileFragment : Fragment() {
 
                 if (record == null && isToday) {
                     // 今天 + 未打卡 → 打卡按钮
-                    val btn = makeBtn("打卡", "#FF6B9FC7") {
+                    val btn = makeBtn("打卡", "#FF6BA4D1") {
                         CheckInStorage.checkIn(ctx, item.id)
                         refreshList()
                         updateCheckinStatus()
@@ -427,7 +427,7 @@ class ProfileFragment : Fragment() {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         addRow.addView(etInput)
-        val btnAdd = makeBtn("添加", "#FF6B9FC7") {
+        val btnAdd = makeBtn("添加", "#FF6BA4D1") {
             val name = etInput.text.toString().trim()
             if (name.isNotEmpty()) {
                 CheckInStorage.addItem(ctx, name)
@@ -482,7 +482,7 @@ class ProfileFragment : Fragment() {
 
         val tvToggle = makeBtn(
             if (enabled) "关闭" else "开启",
-            if (enabled) "#FFB0AAA5" else "#FF6B9FC7"
+            if (enabled) "#FFB0AAA5" else "#FF6BA4D1"
         ) {
             val newEnabled = !WhiteNoiseStorage.isEnabled(ctx)
             WhiteNoiseStorage.setEnabled(ctx, newEnabled)
@@ -530,7 +530,7 @@ class ProfileFragment : Fragment() {
             val tvCheck = TextView(ctx).apply {
                 text = if (isSelected) "● " else "○ "
                 textSize = 16f
-                setTextColor(Color.parseColor(if (isSelected) "#FF6B9FC7" else "#FFCCCCCC"))
+                setTextColor(Color.parseColor(if (isSelected) "#FF6BA4D1" else "#FFCCCCCC"))
             }
             row.addView(tvCheck)
             // 名称
@@ -542,7 +542,7 @@ class ProfileFragment : Fragment() {
             }
             row.addView(tvLabel)
             // 试听按钮
-            val btnPreview = makeBtn("试听", "#FF6B9FC7") {
+            val btnPreview = makeBtn("试听", "#FF6BA4D1") {
                 stopAndPreview(ctx, type)
             }
             row.addView(btnPreview)
@@ -609,7 +609,7 @@ class ProfileFragment : Fragment() {
         })
         toggleRow.addView(makeBtn(
             if (enabled) "关闭" else "开启",
-            if (enabled) "#FFB0AAA5" else "#FF6B9FC7"
+            if (enabled) "#FFB0AAA5" else "#FF6BA4D1"
         ) {
             val newEnabled = !MusicStorage.isEnabled(ctx)
             MusicStorage.setEnabled(ctx, newEnabled)
@@ -624,7 +624,7 @@ class ProfileFragment : Fragment() {
             text = "＋ 上传音乐"
             textSize = 15f
             setTextColor(Color.WHITE)
-            setBackgroundColor(Color.parseColor("#FF6B9FC7"))
+            setBackgroundColor(Color.parseColor("#FF6BA4D1"))
             gravity = android.view.Gravity.CENTER
             setPadding(0, 12, 0, 12)
             layoutParams = LinearLayout.LayoutParams(
@@ -659,7 +659,7 @@ class ProfileFragment : Fragment() {
                 row.addView(TextView(ctx).apply {
                     text = if (isSelected) "● " else "○ "
                     textSize = 16f
-                    setTextColor(Color.parseColor(if (isSelected) "#FF6B9FC7" else "#FFCCCCCC"))
+                    setTextColor(Color.parseColor(if (isSelected) "#FF6BA4D1" else "#FFCCCCCC"))
                     setOnClickListener {
                         MusicStorage.setSelectedIndex(ctx, i)
                         if (!MusicStorage.isEnabled(ctx)) MusicStorage.setEnabled(ctx, true)
@@ -681,7 +681,7 @@ class ProfileFragment : Fragment() {
                     }
                 })
                 // 试听
-                row.addView(makeBtn("试听", "#FF6B9FC7") {
+                row.addView(makeBtn("试听", "#FF6BA4D1") {
                     try {
                         mediaPlayer.reset()
                         mediaPlayer.setDataSource(track.path)
@@ -753,7 +753,7 @@ class ProfileFragment : Fragment() {
         })
         toggleRow.addView(makeBtn(
             if (enabled) "关闭" else "开启",
-            if (enabled) "#FFB0AAA5" else "#FF6B9FC7"
+            if (enabled) "#FFB0AAA5" else "#FF6BA4D1"
         ) {
             PureModeStorage.setEnabled(ctx, !enabled)
             updatePureModeUI()

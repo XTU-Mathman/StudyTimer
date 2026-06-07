@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 全屏正计时：圆形进度环 + 动态背景 + 玻璃按钮 -->
+<!-- 全屏正计时：动态渐变背景 + 圆形进度环 + 玻璃按钮 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFDFBF7">
+    android:background="@color/bg_page">
 
-    <!-- 自定义背景图片（最底层） -->
+    <!-- 动态渐变背景 -->
+    <com.example.studytimer.DynamicBackgroundView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 自定义背景图片（最底层，用户设置时显示） -->
     <ImageView
         android:id="@+id/iv_background"
         android:layout_width="match_parent"
@@ -28,7 +33,9 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:padding="24dp">
+        android:paddingHorizontal="24dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="24dp">
 
         <!-- 顶部弹性空间 -->
         <View
@@ -51,7 +58,7 @@
         <!-- 按钮行（玻璃卡片包裹） -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="56dp"
             android:orientation="horizontal"
             android:gravity="center"
             android:background="@drawable/card_glass"
@@ -65,8 +72,10 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:text="暂停"
-                android:textSize="16sp"
-                android:textStyle="bold"
+                android:textSize="15sp"
+                android:textColor="@color/blue_primary"
+                android:fontFamily="sans-serif-medium"
+                android:background="@drawable/btn_glass_outline"
                 android:stateListAnimator="@null"
                 android:elevation="0dp" />
 
@@ -76,8 +85,10 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:text="结束"
-                android:textSize="16sp"
-                android:textStyle="bold"
+                android:textSize="15sp"
+                android:textColor="@color/error"
+                android:fontFamily="sans-serif-medium"
+                android:background="@drawable/btn_pill_danger"
                 android:stateListAnimator="@null"
                 android:elevation="0dp" />
 

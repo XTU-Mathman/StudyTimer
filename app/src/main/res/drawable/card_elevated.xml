@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 玻璃拟态卡片：高透明度 + 渐变描边 + 柔和阴影 + 顶部高光 -->
+<!-- 高级浮起卡片：双层阴影 + 强玻璃感 + 圆角 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 柔和阴影层 -->
+    <!-- 深层阴影 -->
+    <item
+        android:bottom="-4dp"
+        android:left="-2dp"
+        android:right="-2dp"
+        android:top="4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/shadow_medium" />
+            <corners android:radius="@dimen/card_radius" />
+        </shape>
+    </item>
+    <!-- 浅层阴影 -->
     <item
         android:bottom="-2dp"
         android:left="-1dp"
@@ -12,17 +23,17 @@
             <corners android:radius="@dimen/card_radius" />
         </shape>
     </item>
-    <!-- 玻璃主体 -->
+    <!-- 卡片主体 -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/glass_fill" />
+            <solid android:color="@color/glass_fill_strong" />
             <stroke
                 android:width="0.5dp"
                 android:color="@color/glass_stroke" />
             <corners android:radius="@dimen/card_radius" />
         </shape>
     </item>
-    <!-- 顶部高光条 -->
+    <!-- 顶部高光 -->
     <item
         android:bottom="0dp"
         android:top="0dp">

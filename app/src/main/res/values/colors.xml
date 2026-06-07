@@ -4,43 +4,56 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- ============ 主色：雾蓝（保留） ============ -->
-    <color name="blue_primary">#FF6B9FC7</color>
-    <color name="blue_primary_dark">#FF4A7FA8</color>
-    <color name="blue_primary_light">#FFA8CBE3</color>
-    <color name="blue_pale">#FFE8F0F6</color>
+    <!-- ============ 主色：莫兰迪雾蓝（降饱和度 8%，更高级） ============ -->
+    <color name="blue_primary">#FF6BA4D1</color>
+    <color name="blue_primary_dark">#FF4A8AB8</color>
+    <color name="blue_primary_light">#FF9DC3E0</color>
+    <color name="blue_pale">#FFE8F1F8</color>
 
     <!-- ============ 玻璃拟态专用色 ============ -->
-    <color name="glass_fill">#B3FFFFFF</color>
-    <color name="glass_stroke">#33FFFFFF</color>
-    <color name="glass_highlight">#1AFFFFFF</color>
-    <color name="glass_shadow">#0D000000</color>
+    <color name="glass_fill">#CCFFFFFF</color>
+    <color name="glass_fill_strong">#E6FFFFFF</color>
+    <color name="glass_stroke">#26FFFFFF</color>
+    <color name="glass_stroke_subtle">#14FFFFFF</color>
+    <color name="glass_highlight">#29FFFFFF</color>
+    <color name="glass_shadow">#14000000</color>
+    <color name="glass_shadow_deep">#1A000000</color>
 
-    <!-- ============ 页面背景：暖奶油 ============ -->
-    <color name="bg_page">#FFF7F3EE</color>
-    <color name="background_light">#FFF7F3EE</color>
+    <!-- ============ 页面背景：暖奶油（提亮 1%） ============ -->
+    <color name="bg_page">#FFFAF6F1</color>
+    <color name="background_light">#FFFAF6F1</color>
     <color name="background_white">#FFFFFFFF</color>
 
-    <!-- ============ 背景渐变用色（极淡） ============ -->
-    <color name="bg_gradient_start">#1AE8D5C0</color>
+    <!-- ============ 背景渐变用色 ============ -->
+    <color name="bg_gradient_start">#20E8D5C0</color>
+    <color name="bg_gradient_mid">#12F0E0D0</color>
     <color name="bg_gradient_end">#00FDFBF7</color>
 
-    <!-- ============ 文字色（三级层次） ============ -->
-    <color name="text_primary">#FF2A2520</color>
-    <color name="text_secondary">#FF8C7D70</color>
-    <color name="text_tertiary">#FFB0A090</color>
+    <!-- ============ 文字色（四级层次） ============ -->
+    <color name="text_primary">#FF1C1917</color>
+    <color name="text_secondary">#FF78716C</color>
+    <color name="text_tertiary">#FFA8A29E</color>
+    <color name="text_quaternary">#FFD6D3D1</color>
 
-    <!-- ============ 语义色 ============ -->
-    <color name="success">#FF34C759</color>
-    <color name="warning">#FFFF9F0A</color>
-    <color name="error">#FFFF3B30</color>
+    <!-- ============ 分隔线 ============ -->
+    <color name="divider">#1A000000</color>
+    <color name="divider_light">#0D000000</color>
 
-    <!-- ============ 图表渐变色（保留） ============ -->
-    <color name="chart_blue">#FF6B9FC7</color>
-    <color name="chart_indigo">#FF8B7EC8</color>
-    <color name="chart_purple">#FFB07CC8</color>
-    <color name="chart_pink">#FFD489B5</color>
-    <color name="chart_orange">#FFE8A87C</color>
-    <color name="chart_green">#FF7DB89A</color>
-    <color name="chart_teal">#FF6BB5B5</color>
+    <!-- ============ 语义色（莫兰迪调） ============ -->
+    <color name="success">#FF6DB89A</color>
+    <color name="warning">#FFD4A574</color>
+    <color name="error">#FFD4726A</color>
+
+    <!-- ============ 阴影色 ============ -->
+    <color name="shadow_soft">#12000000</color>
+    <color name="shadow_medium">#1A000000</color>
+
+    <!-- ============ 莫兰迪图表色系 ============ -->
+    <color name="chart_blue">#FF6BA4D1</color>
+    <color name="chart_indigo">#FF8B82B8</color>
+    <color name="chart_purple">#FFA088B8</color>
+    <color name="chart_pink">#FFC496A8</color>
+    <color name="chart_orange">#FFD4A574</color>
+    <color name="chart_green">#FF6DB89A</color>
+    <color name="chart_teal">#FF6BA8A8</color>
 </resources>

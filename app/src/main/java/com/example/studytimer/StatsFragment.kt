@@ -206,7 +206,7 @@ class StatsFragment : Fragment() {
             val emptyView = TextView(requireContext()).apply {
                 text = "暂无计时记录"
                 textSize = 14f
-                setTextColor(Color.parseColor("#FF888888"))
+                setTextColor(resources.getColor(R.color.text_tertiary, null))
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 48, 0, 0)
             }
@@ -345,21 +345,30 @@ class StatsFragment : Fragment() {
      * @param maxSeconds 所有科目中的最大秒数（用于计算进度条比例）
      */
     private fun createStatRow(name: String, seconds: Long, maxSeconds: Long): View {
-        // 外层容器
+        val dp = resources.displayMetrics.density
+
+        // 外层容器 — 玻璃卡片
         val row = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 8, 0, 8)
+            setBackgroundResource(R.drawable.card_glass)
+            elevation = 1f * dp
+            setPadding((16 * dp).toInt(), (14 * dp).toInt(), (16 * dp).toInt(), (14 * dp).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (8 * dp).toInt() }
         }
 
         // 第一行：科目名 + 时长
         val headerRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
         }
 
         val tvName = TextView(requireContext()).apply {
             text = name
             textSize = 14f
-            setTextColor(Color.parseColor("#FF333333"))
+            setTextColor(resources.getColor(R.color.text_primary, null))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         headerRow.addView(tvName)
@@ -367,28 +376,36 @@ class StatsFragment : Fragment() {
         val tvDuration = TextView(requireContext()).apply {
             text = formatDuration(seconds)
             textSize = 14f
-            setTextColor(Color.parseColor("#FF6B9FC7"))
+            setTextColor(resources.getColor(R.color.blue_primary, null))
+            paint.isFakeBoldText = true
         }
         headerRow.addView(tvDuration)
         row.addView(headerRow)
 
-        // 第二行：简易进度条
+        // 第二行：渐变进度条
         val barContainer = LinearLayout(requireContext()).apply {
-            setBackgroundColor(Color.parseColor("#FFF0F0F0"))
+            setBackgroundColor(0x0D000000)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                8
-            ).apply { topMargin = 4 }
+                (6 * dp).toInt()
+            ).apply { topMargin = (8 * dp).toInt() }
         }
 
-        // 进度条比例
         val percent = (seconds.toFloat() / maxSeconds.toFloat()).coerceIn(0f, 1f)
-        val screenWidth = resources.displayMetrics.widthPixels - 48  // 减去 padding
-        val barWidth = (screenWidth * percent).toInt().coerceAtLeast(4)
+        val screenWidth = resources.displayMetrics.widthPixels - (48 * dp).toInt()
+        val barWidth = (screenWidth * percent).toInt().coerceAtLeast((4 * dp).toInt())
 
         val bar = View(requireContext()).apply {
-            setBackgroundColor(Color.parseColor("#FF6B9FC7"))
-            layoutParams = LinearLayout.LayoutParams(barWidth, 8)
+            val barBg = android.graphics.drawable.GradientDrawable().apply {
+                orientation = android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT
+                colors = intArrayOf(
+                    resources.getColor(R.color.blue_primary, null),
+                    resources.getColor(R.color.chart_indigo, null)
+                )
+                cornerRadius = 3f * dp
+            }
+            background = barBg
+            layoutParams = LinearLayout.LayoutParams(barWidth, (6 * dp).toInt())
         }
         barContainer.addView(bar)
         row.addView(barContainer)

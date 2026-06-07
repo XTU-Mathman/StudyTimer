@@ -161,33 +161,63 @@ class TimerFragment : Fragment() {
             isClickable = true
             isCheckable = true
             textSize = 13f
-            setChipBackgroundColorResource(android.R.color.transparent)
-            chipBackgroundColor = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#18FFFFFF")
+            chipCornerRadius = 20f * resources.displayMetrics.density
+            chipMinHeight = 36f * resources.displayMetrics.density
+            setPadding(
+                (14 * resources.displayMetrics.density).toInt(),
+                (8 * resources.displayMetrics.density).toInt(),
+                (14 * resources.displayMetrics.density).toInt(),
+                (8 * resources.displayMetrics.density).toInt()
             )
-            chipStrokeColor = android.content.res.ColorStateList(
+
+            // 选中态：渐变填充 + 白色文字
+            // 未选中态：半透明底 + 蓝描边
+            val selectedBg = android.graphics.drawable.GradientDrawable().apply {
+                orientation = android.graphics.drawable.GradientDrawable.Orientation.TL_BR
+                colors = intArrayOf(0xFF6BA4D1.toInt(), 0xFF8B82B8.toInt())
+                cornerRadius = 20f * resources.displayMetrics.density
+            }
+            val unselectedBg = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0x14FFFFFF.toInt())
+                setStroke(
+                    (1.5f * resources.displayMetrics.density).toInt(),
+                    0x266BA4D1.toInt()
+                )
+                cornerRadius = 20f * resources.displayMetrics.density
+            }
+
+            chipBackgroundColor = android.content.res.ColorStateList(
                 arrayOf(
                     intArrayOf(android.R.attr.state_checked),
                     intArrayOf(-android.R.attr.state_checked)
                 ),
                 intArrayOf(
-                    0xFF6B9FC7.toInt(),
-                    0x336B9FC7.toInt()
+                    0xFF6BA4D1.toInt(),  // 不影响，用 setChipDrawable 替代
+                    0x14FFFFFF.toInt()
                 )
             )
-            chipStrokeWidth = 1.5f
-            chipCornerRadius = 20f
+
+            // 使用 background drawable 实现渐变
+            setChipBackgroundColorResource(android.R.color.transparent)
+            chipBackgroundColor = null
+
+            setOnCheckedChangeListener { _, isChecked ->
+                background = if (isChecked) selectedBg else unselectedBg
+            }
+            background = unselectedBg
+
+            chipStrokeWidth = 0f  // 用 drawable 的 stroke 代替
+
             setTextColor(android.content.res.ColorStateList(
                 arrayOf(
                     intArrayOf(android.R.attr.state_checked),
                     intArrayOf(-android.R.attr.state_checked)
                 ),
                 intArrayOf(
-                    0xFF6B9FC7.toInt(),
-                    0xFF8B8580.toInt()
+                    0xFFFFFFFF.toInt(),
+                    0xFF78716C.toInt()
                 )
             ))
-            setPadding(12, 8, 12, 8)
         }
     }
 

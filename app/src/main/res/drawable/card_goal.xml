@@ -9,7 +9,7 @@
         android:bottom="0dp">
         <shape android:shape="rectangle">
             <solid android:color="@color/glass_shadow" />
-            <corners android:radius="20dp" />
+            <corners android:radius="@dimen/card_radius" />
         </shape>
     </item>
     <!-- 玻璃主体 -->
@@ -19,7 +19,7 @@
             <stroke
                 android:width="0.5dp"
                 android:color="@color/glass_stroke" />
-            <corners android:radius="20dp" />
+            <corners android:radius="@dimen/card_radius" />
         </shape>
     </item>
     <!-- 左侧蓝色强调条 -->
@@ -28,8 +28,8 @@
         <shape android:shape="rectangle">
             <solid android:color="@color/blue_primary" />
             <corners
-                android:topLeftRadius="20dp"
-                android:bottomLeftRadius="20dp"
+                android:topLeftRadius="@dimen/card_radius"
+                android:bottomLeftRadius="@dimen/card_radius"
                 android:topRightRadius="0dp"
                 android:bottomRightRadius="0dp" />
             <size android:width="4dp" />

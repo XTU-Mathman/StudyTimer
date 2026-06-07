@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- 暗色主题：深灰底 + 雾蓝点缀 -->
+    <!-- 暗色主题：深蓝灰底 + 雾蓝点缀 -->
     <style name="Base.Theme.时矩" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#FF8BB8D9</item>
+        <item name="colorPrimary">#FF92BFD8</item>
         <item name="colorOnPrimary">#FF1A1A2E</item>
         <item name="colorPrimaryContainer">#FF2A4A62</item>
         <item name="colorOnPrimaryContainer">#FFC8DFEF</item>
@@ -12,14 +12,35 @@
         <item name="colorOnSecondaryContainer">#FFD4D4DC</item>
 
         <!-- 暗色背景 -->
-        <item name="android:colorBackground">#FF1A1A2E</item>
-        <item name="colorSurface">#FF242438</item>
+        <item name="android:colorBackground">#FF181828</item>
+        <item name="colorSurface">#FF222236</item>
         <item name="colorOnSurface">#FFE8E8EE</item>
 
-        <item name="colorError">#FFFF6B6B</item>
+        <item name="colorError">#FFD4726A</item>
         <item name="colorOnError">#FF1A1A2E</item>
 
         <item name="colorOutline">#FF3A3A4E</item>
         <item name="colorSurfaceVariant">#FF2A2A3E</item>
+    </style>
+
+    <!-- 暗色底部导航指示器 -->
+    <style name="NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">#FF2A4A62</item>
+        <item name="android:width">48dp</item>
+        <item name="android:height">28dp</item>
+        <item name="shapeAppearance">@style/RoundedIndicator</item>
+    </style>
+
+    <!-- 暗色导航文字 -->
+    <style name="NavTextActive" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">#FF92BFD8</item>
+    </style>
+
+    <style name="NavTextInactive" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">#FF6B7280</item>
     </style>
 </resources>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 玻璃拟态卡片：高透明度 + 渐变描边 + 柔和阴影 + 顶部高光 -->
+<!-- 暗色玻璃拟态卡片：深色半透明 + 微光描边 + 柔和阴影 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- 柔和阴影层 -->
     <item
@@ -8,26 +8,26 @@
         android:right="-1dp"
         android:top="2dp">
         <shape android:shape="rectangle">
-            <solid android:color="@color/shadow_soft" />
+            <solid android:color="#18000000" />
             <corners android:radius="@dimen/card_radius" />
         </shape>
     </item>
     <!-- 玻璃主体 -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/glass_fill" />
+            <solid android:color="#1AFFFFFF" />
             <stroke
                 android:width="0.5dp"
-                android:color="@color/glass_stroke" />
+                android:color="#14FFFFFF" />
             <corners android:radius="@dimen/card_radius" />
         </shape>
     </item>
-    <!-- 顶部高光条 -->
+    <!-- 顶部微光条 -->
     <item
         android:bottom="0dp"
         android:top="0dp">
         <shape android:shape="rectangle">
-            <solid android:color="@color/glass_highlight" />
+            <solid android:color="#0DFFFFFF" />
             <corners
                 android:topLeftRadius="@dimen/card_radius"
                 android:topRightRadius="@dimen/card_radius"

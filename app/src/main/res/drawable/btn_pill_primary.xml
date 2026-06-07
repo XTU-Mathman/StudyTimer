@@ -1,14 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 药丸形主按钮：雾蓝填充 + 32dp 大圆角 + 水波纹 + 微阴影 -->
+<!-- 药丸形主按钮：渐变蓝 + 柔和阴影 + 水波纹 -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
     android:color="#33FFFFFF">
     <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@color/blue_primary" />
-            <corners android:radius="32dp" />
-            <stroke
-                android:width="0.5dp"
-                android:color="#40FFFFFF" />
-        </shape>
+        <layer-list>
+            <!-- 阴影层 -->
+            <item
+                android:bottom="-2dp"
+                android:left="-1dp"
+                android:right="-1dp"
+                android:top="3dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#1A6BA4D1" />
+                    <corners android:radius="@dimen/btn_radius" />
+                </shape>
+            </item>
+            <!-- 渐变主体 -->
+            <item>
+                <shape android:shape="rectangle">
+                    <gradient
+                        android:angle="135"
+                        android:startColor="#FF6BA4D1"
+                        android:endColor="#FF8B82B8"
+                        android:type="linear" />
+                    <corners android:radius="@dimen/btn_radius" />
+                    <stroke
+                        android:width="0.5dp"
+                        android:color="#33FFFFFF" />
+                </shape>
+            </item>
+        </layer-list>
     </item>
 </ripple>

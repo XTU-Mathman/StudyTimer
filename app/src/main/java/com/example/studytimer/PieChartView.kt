@@ -4,11 +4,12 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 
 /**
- * 自定义扇形统计图（甜甜圈风格）— 带展开动画
+ * 自定义扇形统计图（甜甜圈风格）— 带展开动画 + 触摸高亮
  */
 class PieChartView @JvmOverloads constructor(
     context: Context,
@@ -17,29 +18,33 @@ class PieChartView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val colors = listOf(
-        Color.parseColor("#FF6B9FC7"),
-        Color.parseColor("#FF8B7EC8"),
-        Color.parseColor("#FFB07CC8"),
-        Color.parseColor("#FFD489B5"),
-        Color.parseColor("#FFE8A87C"),
-        Color.parseColor("#FF7DB89A"),
-        Color.parseColor("#FF6BB5B5"),
+        Color.parseColor("#FF6BA4D1"),
+        Color.parseColor("#FF8B82B8"),
+        Color.parseColor("#FFA088B8"),
+        Color.parseColor("#FFC496A8"),
+        Color.parseColor("#FFD4A574"),
+        Color.parseColor("#FF6DB89A"),
+        Color.parseColor("#FF6BA8A8"),
         Color.parseColor("#FFA8CBE3")
     )
 
     private var data: List<Pair<String, Long>> = emptyList()
-
-    // 动画进度 0..1
     private var animProgress = 1f
+    private var selectedIndex = -1  // 触摸高亮的扇区索引
+    private var highlightProgress = 0f  // 高亮弹出动画 0..1
 
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val arcShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0x20000000
+        maskFilter = BlurMaskFilter(12f, BlurMaskFilter.Blur.NORMAL)
+    }
     private val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.FILL
     }
     private val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = 28f
-        color = Color.parseColor("#FF555555")
     }
     private val legendDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val percentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -50,15 +55,19 @@ class PieChartView @JvmOverloads constructor(
     }
     private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = 32f
-        color = Color.parseColor("#FF2D2D2D")
+        color = Color.parseColor("#FF1C1917")
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
 
     private val innerRadiusRatio = 0.55f
+    private val explodeDistance = 12f  // 高亮弹出像素
+
+    private var highlightAnimator: ValueAnimator? = null
 
     fun setData(items: List<Pair<String, Long>>, animate: Boolean = true) {
         data = items
+        selectedIndex = -1
         if (animate) {
             animProgress = 0f
             ValueAnimator.ofFloat(0f, 1f).apply {
@@ -73,6 +82,76 @@ class PieChartView @JvmOverloads constructor(
         } else {
             animProgress = 1f
             invalidate()
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (data.isEmpty()) return super.onTouchEvent(event)
+
+        val w = width.toFloat()
+        val h = height.toFloat()
+        val chartWidth = w * 0.55f
+        val cx = chartWidth / 2f
+        val cy = h / 2f
+        val outerRadius = minOf(chartWidth, h) / 2f - 24f
+
+        val dx = event.x - cx
+        val dy = event.y - cy
+        val dist = Math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                if (dist in (outerRadius * innerRadiusRatio)..outerRadius) {
+                    // 在环形区域内，计算角度
+                    var angle = Math.toDegrees(Math.atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                    angle = (angle + 90f + 360f) % 360f  // 从顶部开始
+
+                    val total = data.sumOf { it.second }.toFloat()
+                    var cumAngle = 0f
+                    var found = -1
+                    for (i in data.indices) {
+                        val sweep = (data[i].second / total) * 360f
+                        if (angle in cumAngle..(cumAngle + sweep)) {
+                            found = i
+                            break
+                        }
+                        cumAngle += sweep
+                    }
+                    if (found != selectedIndex) {
+                        selectedIndex = found
+                        animateHighlight()
+                    }
+                } else {
+                    if (selectedIndex != -1) {
+                        selectedIndex = -1
+                        animateHighlight()
+                    }
+                }
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                // 保持选中状态一会儿再消失
+                postDelayed({
+                    if (selectedIndex != -1) {
+                        selectedIndex = -1
+                        animateHighlight()
+                    }
+                }, 800)
+            }
+        }
+        return true
+    }
+
+    private fun animateHighlight() {
+        highlightAnimator?.cancel()
+        val target = if (selectedIndex >= 0) 1f else 0f
+        highlightAnimator = ValueAnimator.ofFloat(highlightProgress, target).apply {
+            duration = 200
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                highlightProgress = it.animatedValue as Float
+                invalidate()
+            }
+            start()
         }
     }
 
@@ -96,7 +175,6 @@ class PieChartView @JvmOverloads constructor(
         val oval = RectF(cx - outerRadius, cy - outerRadius, cx + outerRadius, cy + outerRadius)
         var startAngle = -90f
 
-        // 动画阶段：先绘制到 animProgress
         var drawnSweep = 0f
         val totalSweep = 360f * animProgress
 
@@ -106,17 +184,36 @@ class PieChartView @JvmOverloads constructor(
             val available = totalSweep - drawnSweep
             if (available <= 0f) break
 
-            val sweepAngle = minOf(fullSweep, available)  // 该扇区能绘制的角度
+            val sweepAngle = minOf(fullSweep, available)
             arcPaint.color = colors[i % colors.size]
-            canvas.drawArc(oval, startAngle, sweepAngle, true, arcPaint)
 
-            // 百分比文字（只有在扇区足够大时才显示）
+            // 高亮弹出
+            if (i == selectedIndex && highlightProgress > 0f) {
+                val midAngle = startAngle + sweepAngle / 2f
+                val radians = Math.toRadians(midAngle.toDouble())
+                val offset = explodeDistance * highlightProgress
+                val dx = offset * Math.cos(radians).toFloat()
+                val dy = offset * Math.sin(radians).toFloat()
+
+                // 阴影
+                val shadowOval = RectF(oval).apply { offset(dx * 0.5f, dy * 0.5f) }
+                canvas.drawArc(shadowOval, startAngle, sweepAngle, true, arcShadowPaint)
+
+                val highlightOval = RectF(oval).apply { offset(dx, dy) }
+                canvas.drawArc(highlightOval, startAngle, sweepAngle, true, arcPaint)
+            } else {
+                canvas.drawArc(oval, startAngle, sweepAngle, true, arcPaint)
+            }
+
+            // 百分比文字
             if (sweepAngle > 15f) {
                 val midAngle = startAngle + sweepAngle / 2f
                 val radians = Math.toRadians(midAngle.toDouble())
                 val textRadius = (outerRadius + innerRadius) / 2f
-                val tx = cx + textRadius * Math.cos(radians).toFloat()
-                val ty = cy + textRadius * Math.sin(radians).toFloat()
+                val offsetX = if (i == selectedIndex) explodeDistance * highlightProgress * Math.cos(radians).toFloat() else 0f
+                val offsetY = if (i == selectedIndex) explodeDistance * highlightProgress * Math.sin(radians).toFloat() else 0f
+                val tx = cx + textRadius * Math.cos(radians).toFloat() + offsetX
+                val ty = cy + textRadius * Math.sin(radians).toFloat() + offsetY
                 val percentText = "${(value / total * 100).toInt()}%"
                 canvas.drawText(percentText, tx, ty + 8f, percentPaint)
             }
@@ -128,7 +225,7 @@ class PieChartView @JvmOverloads constructor(
         // 中心白色圆
         canvas.drawCircle(cx, cy, innerRadius, centerPaint)
 
-        // 中心文字：总时长
+        // 中心文字
         val totalHours = total / 3600f
         val centerText = if (totalHours >= 1f) "%.1f 小时".format(totalHours)
             else "${(total / 60).toInt()} 分钟"
@@ -140,14 +237,14 @@ class PieChartView @JvmOverloads constructor(
         var legendY = 40f
         val legendSpacing = 44f
 
-        legendPaint.textSize = 32f
-        legendPaint.color = Color.parseColor("#FF2D2D2D")
+        legendPaint.textSize = 30f
+        legendPaint.color = Color.parseColor("#FF1C1917")
         legendPaint.isFakeBoldText = true
         canvas.drawText("科目占比", legendX, legendY, legendPaint)
         legendY += legendSpacing + 12f
 
-        legendPaint.textSize = 25f
-        legendPaint.color = Color.parseColor("#FF8B8580")
+        legendPaint.textSize = 24f
+        legendPaint.color = Color.parseColor("#FF78716C")
         legendPaint.isFakeBoldText = false
 
         for (i in data.indices) {
