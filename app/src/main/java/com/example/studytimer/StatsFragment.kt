@@ -33,8 +33,10 @@ class StatsFragment : Fragment() {
     // 图表容器
     private lateinit var chartPieContainer: LinearLayout
     private lateinit var chartLineContainer: LinearLayout
+    private lateinit var chartHeatmapContainer: LinearLayout
     private lateinit var pieChart: PieChartView
     private lateinit var lineChart: LineChartView
+    private var heatmapView: HeatmapCalendarView? = null
 
     // ==================== 状态 ====================
     private var currentMode = "day"  // 当前模式：day / week / month
@@ -63,6 +65,7 @@ class StatsFragment : Fragment() {
         layoutStatsList = view.findViewById(R.id.layout_stats_list)
         chartPieContainer = view.findViewById(R.id.chart_pie_container)
         chartLineContainer = view.findViewById(R.id.chart_line_container)
+        chartHeatmapContainer = view.findViewById(R.id.chart_heatmap_container)
 
         // ---------- 2. 创建图表控件并添加到容器 ----------
         // 扇形图（所有模式都显示）
@@ -91,6 +94,7 @@ class StatsFragment : Fragment() {
                     R.id.btn_day -> switchMode("day")
                     R.id.btn_week -> switchMode("week")
                     R.id.btn_month -> switchMode("month")
+                    R.id.btn_year -> switchMode("year")
                 }
             }
         }
@@ -115,7 +119,14 @@ class StatsFragment : Fragment() {
         currentCalendar = Calendar.getInstance()  // 重置为今天
 
         // 折线图：仅在周/月模式显示
-        chartLineContainer.visibility = if (mode == "day") View.GONE else View.VISIBLE
+        chartLineContainer.visibility = if (mode == "week" || mode == "month") View.VISIBLE else View.GONE
+        // 扇形图：日/周/月模式显示
+        chartPieContainer.visibility = if (mode != "year") View.VISIBLE else View.GONE
+        // 热力图：仅年模式显示
+        chartHeatmapContainer.visibility = if (mode == "year") View.VISIBLE else View.GONE
+        // 日期导航：年模式隐藏
+        val dateNav = view?.findViewById<View>(R.id.btn_prev)?.parent as? View
+        dateNav?.visibility = if (mode == "year") View.GONE else View.VISIBLE
 
         refreshData()  // 刷新统计
     }
@@ -162,24 +173,58 @@ class StatsFragment : Fragment() {
         val allRecords = StorageHelper.getAllRecords(requireContext())
 
         // 2. 根据模式更新日期标签文字
-        tvDateLabel.text = when (currentMode) {
-            "day" -> dateFormat.format(currentCalendar.time)  // 显示日期
-            "week" -> {
-                // 显示本周范围：周一 ~ 周日
-                val start = getWeekStart()
-                val end = getWeekEnd()
-                "${dateFormat.format(start.time)} ~ ${dateFormat.format(end.time)}"
+        if (currentMode != "year") {
+            tvDateLabel.text = when (currentMode) {
+                "day" -> dateFormat.format(currentCalendar.time)
+                "week" -> {
+                    val start = getWeekStart()
+                    val end = getWeekEnd()
+                    "${dateFormat.format(start.time)} ~ ${dateFormat.format(end.time)}"
+                }
+                "month" -> {
+                    val monthFormat = SimpleDateFormat("yyyy年MM月", Locale.getDefault())
+                    monthFormat.format(currentCalendar.time)
+                }
+                else -> ""
             }
-            "month" -> {
-                // 显示月份
-                val monthFormat = SimpleDateFormat("yyyy年MM月", Locale.getDefault())
-                monthFormat.format(currentCalendar.time)
-            }
-            else -> ""
+        } else {
+            tvDateLabel.text = "最近一年"
         }
 
         // 3. 筛选属于当前范围的记录
-        val filteredRecords = filterRecords(allRecords)
+        val filteredRecords = if (currentMode == "year") allRecords else filterRecords(allRecords)
+
+        // 年模式：热力图 + 总结，不显示图表和列表
+        if (currentMode == "year") {
+            val dailyMinutes = aggregateByDay(allRecords)
+            if (heatmapView == null) {
+                heatmapView = HeatmapCalendarView(requireContext())
+                chartHeatmapContainer.addView(heatmapView)
+            }
+            heatmapView!!.setData(dailyMinutes)
+
+            val totalYearSeconds = allRecords.sumOf { it.durationSeconds }
+            tvTotalDuration.text = "年度总计：${formatDuration(totalYearSeconds)}"
+
+            // 年模式列表：按月汇总
+            layoutStatsList.removeAllViews()
+            val monthlyData = aggregateByMonth(allRecords)
+            if (monthlyData.isEmpty()) {
+                layoutStatsList.addView(TextView(requireContext()).apply {
+                    text = "暂无计时记录"
+                    textSize = 14f
+                    setTextColor(resources.getColor(R.color.text_tertiary, null))
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(0, 48, 0, 0)
+                })
+            } else {
+                val maxMonthSeconds = monthlyData.values.maxOrNull()?.coerceAtLeast(1) ?: 1L
+                for ((month, seconds) in monthlyData) {
+                    layoutStatsList.addView(createStatRow(month, seconds, maxMonthSeconds))
+                }
+            }
+            return
+        }
 
         // 4. 按科目聚合时长
         //    结构：Map<"科目集 - 科目", 总秒数>
@@ -428,5 +473,34 @@ class StatsFragment : Fragment() {
             if (minutes > 0) append("${minutes}分")
             if (seconds > 0 || isEmpty()) append("${seconds}秒")
         }
+    }
+
+    /**
+     * 按天汇总 → Map<yyyy-MM-dd, 分钟数>（热力图用）
+     */
+    private fun aggregateByDay(records: List<TimerRecord>): Map<String, Int> {
+        val result = mutableMapOf<String, Int>()
+        for (r in records) {
+            result[r.date] = (result[r.date] ?: 0) + (r.durationSeconds / 60).toInt()
+        }
+        return result
+    }
+
+    /**
+     * 按月汇总 → 按时间倒序的 Map<yyyy年MM月, 秒数>（年列表用）
+     */
+    private fun aggregateByMonth(records: List<TimerRecord>): LinkedHashMap<String, Long> {
+        val map = mutableMapOf<String, Long>()
+        for (r in records) {
+            val monthKey = r.date.substring(0, 7)  // yyyy-MM
+            map[monthKey] = (map[monthKey] ?: 0) + r.durationSeconds
+        }
+        // 转为中文标签并倒序排列
+        val result = LinkedHashMap<String, Long>()
+        for ((key, value) in map.toSortedMap(compareByDescending { it })) {
+            val parts = key.split("-")
+            result["${parts[0]}年${parts[1].toInt()}月"] = value
+        }
+        return result
     }
 }
