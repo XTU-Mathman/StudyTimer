@@ -95,8 +95,10 @@ class DynamicBackgroundView @JvmOverloads constructor(
     }
 
     companion object {
-        private val paint = android.graphics.Paint().apply {
-            isAntiAlias = true
-        }
+        // paint 移到实例变量，避免多实例共享 shader 导致闪烁
+    }
+
+    private val paint = android.graphics.Paint().apply {
+        isAntiAlias = true
     }
 }

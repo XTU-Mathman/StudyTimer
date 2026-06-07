@@ -102,6 +102,9 @@ class TimerRunningActivity : AppCompatActivity() {
         startTimestamp = System.currentTimeMillis()
         handler.post(refreshRunnable)
 
+        // 启动前台服务保活
+        TimerService.startService(this, "$subjectGroup · $subjectName", false)
+
         // 白噪音 & 音乐
         startWhiteNoiseIfEnabled()
         startMusicIfEnabled()
@@ -156,6 +159,7 @@ class TimerRunningActivity : AppCompatActivity() {
                         handler.removeCallbacks(refreshRunnable)
                         WhiteNoiseEngine.getInstance().stop()
                         stopMusic()
+                        TimerService.stopService(this@TimerRunningActivity)
                         finish()
                     }
                     .setNegativeButton("继续计时", null).show()
@@ -184,6 +188,7 @@ class TimerRunningActivity : AppCompatActivity() {
         MottoStorage.moveToNext(this)
         WhiteNoiseEngine.getInstance().stop()
         stopMusic()
+        TimerService.stopService(this)
         finish()
     }
 

@@ -105,6 +105,9 @@ class CountdownRunningActivity : AppCompatActivity() {
         startTimestamp = System.currentTimeMillis()
         handler.post(refreshRunnable)
 
+        // 启动前台服务保活
+        TimerService.startService(this, "$subjectGroup · $subjectName", true, totalMinutes)
+
         // 白噪音 & 音乐
         startWhiteNoiseIfEnabled()
         startMusicIfEnabled()
@@ -157,6 +160,7 @@ class CountdownRunningActivity : AppCompatActivity() {
                         handler.removeCallbacks(refreshRunnable)
                         WhiteNoiseEngine.getInstance().stop()
                         stopMusic()
+                        TimerService.stopService(this@CountdownRunningActivity)
                         finish()
                     }.setNegativeButton("继续计时", null).show()
             }
@@ -174,6 +178,7 @@ class CountdownRunningActivity : AppCompatActivity() {
         MottoStorage.moveToNext(this)
         WhiteNoiseEngine.getInstance().stop()
         stopMusic()
+        TimerService.stopService(this)
         finish()
     }
 
@@ -196,6 +201,7 @@ class CountdownRunningActivity : AppCompatActivity() {
         MottoStorage.moveToNext(this)
         WhiteNoiseEngine.getInstance().stop()
         stopMusic()
+        TimerService.stopService(this)
         finish()
     }
 

@@ -103,8 +103,16 @@ class WhiteNoiseEngine {
     fun stop() {
         playing = false
         playThread?.interrupt()
+        // 等待播放线程结束（finally 中会清理 AudioTrack）
+        val t = playThread
         playThread = null
-        releaseAudioTrack()
+        if (t != null && t.isAlive && t != Thread.currentThread()) {
+            try { t.join(500) } catch (_: Exception) {}
+        }
+        // 超时兜底：如果线程还没结束，强制清理
+        if (audioTrack != null) {
+            releaseAudioTrack()
+        }
     }
 
     val isPlaying: Boolean get() = playing

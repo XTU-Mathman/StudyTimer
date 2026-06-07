@@ -13,7 +13,7 @@ android {
         // 目标 SDK 版本（不超过 compileSdk）
         targetSdk = 35
         versionCode = 2
-        versionName = "1.5"
+        versionName = "1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -7,10 +7,14 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 /**
  * 主活动：管理底部导航栏和四个页面的切换
- * - 自定义缩放+渐入 Fragment 过渡
- * - 底部导航图标选中弹性动画
+ * - Fragment 缓存 + show/hide 切换（保留页面状态）
+ * - 自定义缩放+渐入 Fragment 过渡动画
  */
 class MainActivity : AppCompatActivity() {
+
+    // 缓存 Fragment 实例，切 Tab 不丢失状态
+    private val fragmentCache = mutableMapOf<Int, Fragment>()
+    private var activeFragment: Fragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,45 +25,80 @@ class MainActivity : AppCompatActivity() {
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         // 初始化科目数据和每日待办重置
-        SubjectData.init(this)
-        TodoStorage.resetDailyIfNeeded(this)
-        TodoStorage.initStudyGoal(this)
+        if (savedInstanceState == null) {
+            SubjectData.init(this)
+            TodoStorage.resetDailyIfNeeded(this)
+            TodoStorage.initStudyGoal(this)
+        }
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
-        // 默认显示计时页面
+        // 恢复或创建默认页面
         if (savedInstanceState == null) {
+            val timerFragment = getOrCreateFragment(R.id.nav_timer)
             supportFragmentManager.beginTransaction()
-                .add(R.id.fragment_container, TimerFragment(), "timer")
+                .add(R.id.fragment_container, timerFragment, "timer")
                 .commit()
+            activeFragment = timerFragment
+        } else {
+            // 恢复后找回当前显示的 Fragment
+            activeFragment = supportFragmentManager.fragments.firstOrNull { it.isVisible }
+            // 重建缓存映射
+            for (f in supportFragmentManager.fragments) {
+                val id = getFragmentId(f)
+                if (id != 0) fragmentCache[id] = f
+            }
         }
 
         bottomNav.setOnItemSelectedListener { menuItem ->
-            val fragment: Fragment = when (menuItem.itemId) {
-                R.id.nav_todo -> TodoFragment()
-                R.id.nav_timer -> TimerFragment()
-                R.id.nav_stats -> StatsFragment()
-                R.id.nav_profile -> ProfileFragment()
-                else -> return@setOnItemSelectedListener false
-            }
-            switchToFragment(fragment)
+            switchToFragment(menuItem.itemId)
             true
         }
     }
 
-    /**
-     * 自定义出场/入场动画切换 Fragment
-     */
-    private fun switchToFragment(fragment: Fragment) {
-        val tag = fragment.javaClass.simpleName
-        supportFragmentManager.beginTransaction()
+    private fun getOrCreateFragment(itemId: Int): Fragment {
+        return fragmentCache.getOrPut(itemId) {
+            when (itemId) {
+                R.id.nav_todo -> TodoFragment()
+                R.id.nav_timer -> TimerFragment()
+                R.id.nav_stats -> StatsFragment()
+                R.id.nav_profile -> ProfileFragment()
+                else -> TimerFragment()
+            }
+        }
+    }
+
+    private fun getFragmentId(fragment: Fragment): Int {
+        return when (fragment) {
+            is TodoFragment -> R.id.nav_todo
+            is TimerFragment -> R.id.nav_timer
+            is StatsFragment -> R.id.nav_stats
+            is ProfileFragment -> R.id.nav_profile
+            else -> 0
+        }
+    }
+
+    private fun switchToFragment(itemId: Int) {
+        val target = getOrCreateFragment(itemId)
+        if (target === activeFragment) return // 已经是当前页
+
+        val transaction = supportFragmentManager.beginTransaction()
             .setCustomAnimations(
-                R.anim.fragment_enter,    // 进入：缩放+渐入+上滑
-                R.anim.fragment_exit,     // 退出：缩放+渐出
-                R.anim.fragment_pop_enter, // 返回进入：渐入+下滑
-                R.anim.fragment_pop_exit   // 返回退出：渐出+上滑
+                R.anim.fragment_enter,
+                R.anim.fragment_exit
             )
-            .replace(R.id.fragment_container, fragment, tag)
-            .commit()
+
+        // 隐藏当前页
+        activeFragment?.let { transaction.hide(it) }
+
+        // 如果目标还没添加，先 add；否则 show
+        if (!target.isAdded) {
+            transaction.add(R.id.fragment_container, target, target.javaClass.simpleName)
+        } else {
+            transaction.show(target)
+        }
+
+        transaction.commit()
+        activeFragment = target
     }
 }
