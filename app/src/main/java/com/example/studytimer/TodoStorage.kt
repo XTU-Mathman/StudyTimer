@@ -116,7 +116,7 @@ object TodoStorage {
             // 未配置：显示占位项
             display.add(TodoItem(
                 id = -1L,
-                content = "今日学习目标（点击 ⚙ 设置）",
+                content = "今日学习目标",
                 isDone = false,
                 isDaily = true,
                 itemType = TodoItem.TYPE_BUILTIN_GOAL,

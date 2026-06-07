@@ -170,43 +170,29 @@ class TimerFragment : Fragment() {
                 (8 * resources.displayMetrics.density).toInt()
             )
 
-            // 选中态：渐变填充 + 白色文字
-            // 未选中态：半透明底 + 蓝描边
-            val selectedBg = android.graphics.drawable.GradientDrawable().apply {
-                orientation = android.graphics.drawable.GradientDrawable.Orientation.TL_BR
-                colors = intArrayOf(0xFF6BA4D1.toInt(), 0xFF8B82B8.toInt())
-                cornerRadius = 20f * resources.displayMetrics.density
-            }
-            val unselectedBg = android.graphics.drawable.GradientDrawable().apply {
-                setColor(0x14FFFFFF.toInt())
-                setStroke(
-                    (1.5f * resources.displayMetrics.density).toInt(),
-                    0x266BA4D1.toInt()
-                )
-                cornerRadius = 20f * resources.displayMetrics.density
-            }
-
+            // 选中态：莫兰迪蓝底 + 白色文字
+            // 未选中态：半透明底 + 蓝描边 + 灰色文字
             chipBackgroundColor = android.content.res.ColorStateList(
                 arrayOf(
                     intArrayOf(android.R.attr.state_checked),
                     intArrayOf(-android.R.attr.state_checked)
                 ),
                 intArrayOf(
-                    0xFF6BA4D1.toInt(),  // 不影响，用 setChipDrawable 替代
-                    0x14FFFFFF.toInt()
+                    0xFF6BA4D1.toInt(),   // 选中：莫兰迪蓝
+                    0x14FFFFFF.toInt()    // 未选中：半透明
                 )
             )
-
-            // 使用 background drawable 实现渐变
-            setChipBackgroundColorResource(android.R.color.transparent)
-            chipBackgroundColor = null
-
-            setOnCheckedChangeListener { _, isChecked ->
-                background = if (isChecked) selectedBg else unselectedBg
-            }
-            background = unselectedBg
-
-            chipStrokeWidth = 0f  // 用 drawable 的 stroke 代替
+            chipStrokeColor = android.content.res.ColorStateList(
+                arrayOf(
+                    intArrayOf(android.R.attr.state_checked),
+                    intArrayOf(-android.R.attr.state_checked)
+                ),
+                intArrayOf(
+                    0xFF5B95C0.toInt(),   // 选中：深蓝描边
+                    0x266BA4D1.toInt()    // 未选中：淡蓝描边
+                )
+            )
+            chipStrokeWidth = (1.5f * resources.displayMetrics.density)
 
             setTextColor(android.content.res.ColorStateList(
                 arrayOf(
@@ -214,8 +200,8 @@ class TimerFragment : Fragment() {
                     intArrayOf(-android.R.attr.state_checked)
                 ),
                 intArrayOf(
-                    0xFFFFFFFF.toInt(),
-                    0xFF78716C.toInt()
+                    0xFFFFFFFF.toInt(),   // 选中：白色（蓝底上清晰可见）
+                    0xFF78716C.toInt()    // 未选中：灰色
                 )
             ))
         }

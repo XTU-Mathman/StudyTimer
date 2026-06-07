@@ -27,7 +27,7 @@
     <style name="NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">#FF2A4A62</item>
         <item name="android:width">48dp</item>
-        <item name="android:height">28dp</item>
+        <item name="android:height">24dp</item>
         <item name="shapeAppearance">@style/RoundedIndicator</item>
     </style>
 

@@ -57,7 +57,11 @@ object MottoStorage {
     /** 获取当前格言（根据 index） */
     fun getCurrent(context: Context): String {
         val all = getAll(context)
-        if (all.isEmpty()) return ""
+        if (all.isEmpty()) {
+            // 全部删空 → 恢复默认格言
+            saveAll(context, DEFAULT_MOTTOS.toMutableList())
+            return DEFAULT_MOTTOS[0]
+        }
         val index = getCurrentIndex(context) % all.size
         return all[index]
     }

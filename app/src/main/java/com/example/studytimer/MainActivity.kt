@@ -1,11 +1,7 @@
 package com.example.studytimer
 
-import android.animation.ObjectAnimator
 import android.os.Bundle
-import android.view.animation.DecelerateInterpolator
-import android.view.animation.OvershootInterpolator
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -47,20 +43,6 @@ class MainActivity : AppCompatActivity() {
                 else -> return@setOnItemSelectedListener false
             }
             switchToFragment(fragment)
-            // 选中图标的弹性弹跳
-            val iconView = menuItem.actionView
-            if (iconView != null) {
-                ObjectAnimator.ofFloat(iconView, "scaleX", 0.8f, 1.15f, 1.0f).apply {
-                    duration = 450
-                    interpolator = OvershootInterpolator(1.5f)
-                    start()
-                }
-                ObjectAnimator.ofFloat(iconView, "scaleY", 0.8f, 1.15f, 1.0f).apply {
-                    duration = 450
-                    interpolator = OvershootInterpolator(1.5f)
-                    start()
-                }
-            }
             true
         }
     }

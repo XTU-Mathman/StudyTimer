@@ -74,12 +74,15 @@ class TimerRunningActivity : AppCompatActivity() {
         btnPauseResume = findViewById(R.id.btn_pause_resume)
         btnEnd = findViewById(R.id.btn_end)
 
-        // 自定义背景
+        // 自定义背景（安全加载，避免 OOM）
         val bgPath = ProfileStorage.getBackgroundPath(this)
         val ivBg = findViewById<ImageView>(R.id.iv_background)
         if (bgPath != null) {
-            ivBg.setImageBitmap(BitmapFactory.decodeFile(bgPath))
-            ivBg.visibility = View.VISIBLE
+            val bitmap = decodeSampledBitmap(bgPath, 1080, 1920)
+            if (bitmap != null) {
+                ivBg.setImageBitmap(bitmap)
+                ivBg.visibility = View.VISIBLE
+            }
         }
 
         subjectGroup = intent.getStringExtra("subject_group") ?: "未分类"
@@ -141,6 +144,21 @@ class TimerRunningActivity : AppCompatActivity() {
 
         // 结束
         btnEnd.setOnClickListener { saveAndFinish() }
+
+        // 返回键拦截（替代已弃用的 onBackPressed）
+        onBackPressedDispatcher.addCallback(this) {
+            AlertDialog.Builder(this@TimerRunningActivity)
+                .setTitle("放弃计时？")
+                .setMessage("计时仍在进行，确定要放弃吗？")
+                .setPositiveButton("确定放弃") { _, _ ->
+                    finished = true
+                    handler.removeCallbacks(refreshRunnable)
+                    WhiteNoiseEngine.getInstance().stop()
+                    stopMusic()
+                    finish()
+                }
+                .setNegativeButton("继续计时", null).show()
+        }
     }
 
     private fun saveAndFinish() {
@@ -165,20 +183,6 @@ class TimerRunningActivity : AppCompatActivity() {
         WhiteNoiseEngine.getInstance().stop()
         stopMusic()
         finish()
-    }
-
-    override fun onBackPressed() {
-        AlertDialog.Builder(this)
-            .setTitle("放弃计时？")
-            .setMessage("计时仍在进行，确定要放弃吗？")
-            .setPositiveButton("确定放弃") { _, _ ->
-                finished = true
-                handler.removeCallbacks(refreshRunnable)
-                WhiteNoiseEngine.getInstance().stop()
-                stopMusic()
-                finish()
-            }
-            .setNegativeButton("继续计时", null).show()
     }
 
     private fun formatMillis(millis: Long): String {
@@ -235,5 +239,29 @@ class TimerRunningActivity : AppCompatActivity() {
                 WhiteNoiseEngine.getInstance().play(type)
             }
         }
+    }
+
+    /** 安全加载大图：先采样尺寸，再按比例加载，避免 OOM */
+    private fun decodeSampledBitmap(path: String, reqWidth: Int, reqHeight: Int): android.graphics.Bitmap? {
+        return try {
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, options)
+            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
+            options.inJustDecodeBounds = false
+            BitmapFactory.decodeFile(path, options)
+        } catch (_: Exception) { null }
+    }
+
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        val (height, width) = options.outHeight to options.outWidth
+        var inSampleSize = 1
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight = height / 2
+            val halfWidth = width / 2
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
     }
 }

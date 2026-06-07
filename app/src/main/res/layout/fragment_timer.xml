@@ -126,7 +126,7 @@
                 <LinearLayout
                     android:id="@+id/card_count_up"
                     android:layout_width="0dp"
-                    android:layout_height="110dp"
+                    android:layout_height="90dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     android:orientation="vertical"
@@ -152,21 +152,13 @@
                         android:textColor="@color/text_primary"
                         android:fontFamily="sans-serif-medium" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="不限时长"
-                        android:textSize="12sp"
-                        android:textColor="@color/text_tertiary"
-                        android:layout_marginTop="4dp" />
-
                 </LinearLayout>
 
                 <!-- 倒计时卡片 -->
                 <LinearLayout
                     android:id="@+id/card_count_down"
                     android:layout_width="0dp"
-                    android:layout_height="110dp"
+                    android:layout_height="90dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:orientation="vertical"
@@ -191,14 +183,6 @@
                         android:textSize="15sp"
                         android:textColor="@color/text_primary"
                         android:fontFamily="sans-serif-medium" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="设定时长"
-                        android:textSize="12sp"
-                        android:textColor="@color/text_tertiary"
-                        android:layout_marginTop="4dp" />
 
                 </LinearLayout>
 

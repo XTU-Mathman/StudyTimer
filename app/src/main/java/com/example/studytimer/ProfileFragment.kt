@@ -30,6 +30,9 @@ class ProfileFragment : Fragment() {
     private lateinit var tvMusicStatus: TextView
     private lateinit var tvPureModeStatus: TextView
 
+    // 音乐试听播放器（类级别管理，避免泄漏）
+    private var previewPlayer: android.media.MediaPlayer? = null
+
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -110,6 +113,20 @@ class ProfileFragment : Fragment() {
         updateNoiseUI()
         updateMusicUI()
         updatePureModeUI()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        releasePreviewPlayer()
+    }
+
+    /** 安全释放试听播放器 */
+    private fun releasePreviewPlayer() {
+        try {
+            previewPlayer?.stop()
+            previewPlayer?.release()
+        } catch (_: Exception) {}
+        previewPlayer = null
     }
 
     private fun updateBgUI() {
@@ -588,7 +605,8 @@ class ProfileFragment : Fragment() {
         val tracks = MusicStorage.getTracks(ctx)
         val selectedIdx = MusicStorage.getSelectedIndex(ctx)
         val enabled = MusicStorage.isEnabled(ctx)
-        val mediaPlayer = android.media.MediaPlayer()
+        // 先释放旧的试听播放器
+        releasePreviewPlayer()
 
         val contentLayout = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -613,7 +631,7 @@ class ProfileFragment : Fragment() {
         ) {
             val newEnabled = !MusicStorage.isEnabled(ctx)
             MusicStorage.setEnabled(ctx, newEnabled)
-            if (!newEnabled) mediaPlayer.release()
+            if (!newEnabled) releasePreviewPlayer()
             updateMusicUI()
             showMusicDialog()
         })
@@ -683,18 +701,20 @@ class ProfileFragment : Fragment() {
                 // 试听
                 row.addView(makeBtn("试听", "#FF6BA4D1") {
                     try {
-                        mediaPlayer.reset()
-                        mediaPlayer.setDataSource(track.path)
-                        mediaPlayer.prepare()
-                        mediaPlayer.isLooping = true
-                        mediaPlayer.start()
+                        releasePreviewPlayer()
+                        previewPlayer = android.media.MediaPlayer().apply {
+                            setDataSource(track.path)
+                            prepare()
+                            isLooping = true
+                            start()
+                        }
                     } catch (_: Exception) {
                         Toast.makeText(ctx, "无法播放此文件", Toast.LENGTH_SHORT).show()
                     }
                 })
                 // 删除
                 row.addView(makeBtn("删", "#FFFF6B6B") {
-                    mediaPlayer.release()
+                    releasePreviewPlayer()
                     MusicStorage.deleteTrack(ctx, i)
                     updateMusicUI()
                     showMusicDialog()
@@ -716,7 +736,7 @@ class ProfileFragment : Fragment() {
             .setTitle("音乐")
             .setView(contentLayout)
             .setNegativeButton("关闭") { _, _ -> }
-            .setOnDismissListener { mediaPlayer.release() }
+            .setOnDismissListener { releasePreviewPlayer() }
             .show()
     }
 

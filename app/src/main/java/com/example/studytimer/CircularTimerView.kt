@@ -151,12 +151,13 @@ class CircularTimerView @JvmOverloads constructor(
         val cx = width / 2f
         val cy = height / 2f
         val density = resources.displayMetrics.density
+        val scaledDensity = resources.displayMetrics.scaledDensity
 
         val ringWidth = RING_WIDTH_DP * density
         val glowWidth = GLOW_WIDTH_DP * density
-        val timeSize = TIME_TEXT_SIZE_SP * density
-        val subSize = SUB_TEXT_SIZE_SP * density
-        val statusSize = STATUS_TEXT_SIZE_SP * density
+        val timeSize = TIME_TEXT_SIZE_SP * scaledDensity
+        val subSize = SUB_TEXT_SIZE_SP * scaledDensity
+        val statusSize = STATUS_TEXT_SIZE_SP * scaledDensity
 
         val diameter = minOf(width, height) * 0.72f
         val radius = diameter / 2f
