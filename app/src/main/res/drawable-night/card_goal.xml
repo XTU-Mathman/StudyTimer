@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 暗色模式学习目标卡片 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="0dp"
+        android:top="2dp"
+        android:right="0dp"
+        android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#20000000" />
+            <corners android:radius="@dimen/card_radius" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#33FFFFFF" />
+            <stroke
+                android:width="0.5dp"
+                android:color="#1AFFFFFF" />
+            <corners android:radius="@dimen/card_radius" />
+        </shape>
+    </item>
+    <item
+        android:right="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF92BFD8" />
+            <corners
+                android:topLeftRadius="@dimen/card_radius"
+                android:bottomLeftRadius="@dimen/card_radius"
+                android:topRightRadius="0dp"
+                android:bottomRightRadius="0dp" />
+            <size android:width="4dp" />
+        </shape>
+    </item>
+</layer-list>

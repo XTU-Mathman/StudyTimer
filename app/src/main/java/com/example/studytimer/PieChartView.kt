@@ -33,37 +33,41 @@ class PieChartView @JvmOverloads constructor(
     private var selectedIndex = -1  // 触摸高亮的扇区索引
     private var highlightProgress = 0f  // 高亮弹出动画 0..1
 
+    private val density = resources.displayMetrics.density
+    private val scaledDensity = resources.displayMetrics.scaledDensity
+
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val arcShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = 0x20000000
-        maskFilter = BlurMaskFilter(12f, BlurMaskFilter.Blur.NORMAL)
+        maskFilter = BlurMaskFilter(8f * density, BlurMaskFilter.Blur.NORMAL)
     }
     private val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.FILL
     }
     private val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 28f
+        textSize = 13f * scaledDensity
     }
     private val legendDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val percentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 32f
+        textSize = 12f * scaledDensity
         color = Color.WHITE
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
     private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 32f
+        textSize = 15f * scaledDensity
         color = Color.parseColor("#FF1C1917")
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
 
     private val innerRadiusRatio = 0.55f
-    private val explodeDistance = 12f  // 高亮弹出像素
+    private val explodeDistance = 8f * density  // 高亮弹出像素
 
     private var highlightAnimator: ValueAnimator? = null
+    private var highlightRunnable: Runnable? = null
 
     fun setData(items: List<Pair<String, Long>>, animate: Boolean = true) {
         data = items
@@ -93,7 +97,7 @@ class PieChartView @JvmOverloads constructor(
         val chartWidth = w * 0.55f
         val cx = chartWidth / 2f
         val cy = h / 2f
-        val outerRadius = minOf(chartWidth, h) / 2f - 24f
+        val outerRadius = minOf(chartWidth, h) / 2f - 16f * density
 
         val dx = event.x - cx
         val dy = event.y - cy
@@ -129,16 +133,23 @@ class PieChartView @JvmOverloads constructor(
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                // 保持选中状态一会儿再消失
-                postDelayed({
+                highlightRunnable?.let { removeCallbacks(it) }
+                highlightRunnable = Runnable {
                     if (selectedIndex != -1) {
                         selectedIndex = -1
                         animateHighlight()
                     }
-                }, 800)
+                }
+                postDelayed(highlightRunnable!!, 800)
             }
         }
         return true
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        highlightAnimator?.cancel()
+        highlightRunnable?.let { removeCallbacks(it) }
     }
 
     private fun animateHighlight() {
@@ -169,7 +180,7 @@ class PieChartView @JvmOverloads constructor(
         val chartWidth = w * 0.55f
         val cx = chartWidth / 2f
         val cy = h / 2f
-        val outerRadius = minOf(chartWidth, h) / 2f - 24f
+        val outerRadius = minOf(chartWidth, h) / 2f - 16f * density
         val innerRadius = outerRadius * innerRadiusRatio
 
         val oval = RectF(cx - outerRadius, cy - outerRadius, cx + outerRadius, cy + outerRadius)
@@ -215,7 +226,7 @@ class PieChartView @JvmOverloads constructor(
                 val tx = cx + textRadius * Math.cos(radians).toFloat() + offsetX
                 val ty = cy + textRadius * Math.sin(radians).toFloat() + offsetY
                 val percentText = "${(value / total * 100).toInt()}%"
-                canvas.drawText(percentText, tx, ty + 8f, percentPaint)
+                canvas.drawText(percentText, tx, ty + 5f * density, percentPaint)
             }
 
             drawnSweep += fullSweep
@@ -229,21 +240,21 @@ class PieChartView @JvmOverloads constructor(
         val totalHours = total / 3600f
         val centerText = if (totalHours >= 1f) "%.1f 小时".format(totalHours)
             else "${(total / 60).toInt()} 分钟"
-        titlePaint.textSize = 32f
-        canvas.drawText(centerText, cx, cy + 10f, titlePaint)
+        titlePaint.textSize = 15f * scaledDensity
+        canvas.drawText(centerText, cx, cy + 6f * density, titlePaint)
 
         // 图例
-        val legendX = chartWidth + 16f
-        var legendY = 40f
-        val legendSpacing = 44f
+        val legendX = chartWidth + 12f * density
+        var legendY = 28f * density
+        val legendSpacing = 30f * density
 
-        legendPaint.textSize = 30f
+        legendPaint.textSize = 14f * scaledDensity
         legendPaint.color = Color.parseColor("#FF1C1917")
         legendPaint.isFakeBoldText = true
         canvas.drawText("科目占比", legendX, legendY, legendPaint)
-        legendY += legendSpacing + 12f
+        legendY += legendSpacing + 8f * density
 
-        legendPaint.textSize = 24f
+        legendPaint.textSize = 11f * scaledDensity
         legendPaint.color = Color.parseColor("#FF78716C")
         legendPaint.isFakeBoldText = false
 
@@ -251,9 +262,9 @@ class PieChartView @JvmOverloads constructor(
             val (name, value) = data[i]
             val percent = (value / total * 100).toInt()
             legendDotPaint.color = colors[i % colors.size]
-            canvas.drawCircle(legendX + 8f, legendY - 6f, 7f, legendDotPaint)
+            canvas.drawCircle(legendX + 6f * density, legendY - 4f * density, 5f * density, legendDotPaint)
             val displayName = if (name.length > 10) name.take(10) + "…" else name
-            canvas.drawText("$displayName  $percent%", legendX + 22f, legendY, legendPaint)
+            canvas.drawText("$displayName  $percent%", legendX + 16f * density, legendY, legendPaint)
             legendY += legendSpacing
         }
     }

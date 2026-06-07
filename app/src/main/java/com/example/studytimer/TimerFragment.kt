@@ -170,16 +170,19 @@ class TimerFragment : Fragment() {
                 (8 * resources.displayMetrics.density).toInt()
             )
 
-            // 选中态：莫兰迪蓝底 + 白色文字
-            // 未选中态：半透明底 + 蓝描边 + 灰色文字
+            // 选中态：主色底 + 白色文字（适配暗色模式）
+            // 未选中态：半透明底 + 蓝描边 + 次要文字色
+            val primaryColor = resources.getColor(R.color.blue_primary, null)
+            val secondaryTextColor = resources.getColor(R.color.text_secondary, null)
+
             chipBackgroundColor = android.content.res.ColorStateList(
                 arrayOf(
                     intArrayOf(android.R.attr.state_checked),
                     intArrayOf(-android.R.attr.state_checked)
                 ),
                 intArrayOf(
-                    0xFF6BA4D1.toInt(),   // 选中：莫兰迪蓝
-                    0x14FFFFFF.toInt()    // 未选中：半透明
+                    primaryColor,             // 选中：跟随主题主色
+                    0x14FFFFFF.toInt()        // 未选中：半透明
                 )
             )
             chipStrokeColor = android.content.res.ColorStateList(
@@ -188,8 +191,8 @@ class TimerFragment : Fragment() {
                     intArrayOf(-android.R.attr.state_checked)
                 ),
                 intArrayOf(
-                    0xFF5B95C0.toInt(),   // 选中：深蓝描边
-                    0x266BA4D1.toInt()    // 未选中：淡蓝描边
+                    primaryColor,             // 选中：主色描边
+                    0x26FFFFFF.toInt()        // 未选中：半透明描边
                 )
             )
             chipStrokeWidth = (1.5f * resources.displayMetrics.density)
@@ -200,8 +203,8 @@ class TimerFragment : Fragment() {
                     intArrayOf(-android.R.attr.state_checked)
                 ),
                 intArrayOf(
-                    0xFFFFFFFF.toInt(),   // 选中：白色（蓝底上清晰可见）
-                    0xFF78716C.toInt()    // 未选中：灰色
+                    0xFFFFFFFF.toInt(),       // 选中：白色
+                    secondaryTextColor        // 未选中：跟随主题
                 )
             ))
         }

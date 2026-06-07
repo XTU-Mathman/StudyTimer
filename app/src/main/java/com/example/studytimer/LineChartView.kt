@@ -21,7 +21,7 @@ class LineChartView @JvmOverloads constructor(
 
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#FF6BA4D1")
-        strokeWidth = 6f
+        strokeWidth = 4f * resources.displayMetrics.density
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
@@ -34,39 +34,40 @@ class LineChartView @JvmOverloads constructor(
     private val dotStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.STROKE
-        strokeWidth = 3f
+        strokeWidth = 2f * resources.displayMetrics.density
     }
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#FFCCCCCC")
-        strokeWidth = 1.5f
+        strokeWidth = 1f * resources.displayMetrics.density
         style = Paint.Style.STROKE
     }
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#FFF0F0F0")
-        strokeWidth = 1f
+        strokeWidth = 1f * resources.displayMetrics.density
         style = Paint.Style.STROKE
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 24f
+        textSize = 11f * resources.displayMetrics.scaledDensity
         color = Color.parseColor("#FF78716C")
         textAlign = Paint.Align.CENTER
     }
     private val yLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 24f
+        textSize = 11f * resources.displayMetrics.scaledDensity
         color = Color.parseColor("#FF78716C")
         textAlign = Paint.Align.RIGHT
     }
     private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 30f
+        textSize = 14f * resources.displayMetrics.scaledDensity
         color = Color.parseColor("#FF2D2D2D")
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
 
-    private val marginLeft = 64f
-    private val marginRight = 16f
-    private val marginTop = 48f
-    private val marginBottom = 56f
+    private val density = resources.displayMetrics.density
+    private val marginLeft = 48f * density
+    private val marginRight = 12f * density
+    private val marginTop = 32f * density
+    private val marginBottom = 40f * density
 
     fun setData(items: List<Pair<String, Long>>, animate: Boolean = true) {
         data = items
@@ -103,7 +104,7 @@ class LineChartView @JvmOverloads constructor(
         val chartHeight = chartBottom - chartTop
 
         // 标题
-        canvas.drawText("每日学习时长趋势", w / 2f, 34f, titlePaint)
+        canvas.drawText("每日学习时长趋势", w / 2f, 22f * density, titlePaint)
 
         // Y 轴范围
         val maxSeconds = data.maxOf { it.second }.coerceAtLeast(60)
@@ -115,7 +116,7 @@ class LineChartView @JvmOverloads constructor(
             val y = chartBottom - (chartHeight * i / gridCount)
             val value = yMax * i / gridCount
             canvas.drawLine(chartLeft, y, chartRight, y, gridPaint)
-            canvas.drawText("${value / 60}分", chartLeft - 8f, y + 8f, yLabelPaint)
+            canvas.drawText("${value / 60}分", chartLeft - 6f * density, y + 6f * density, yLabelPaint)
         }
 
         // X 轴 / Y 轴基线
@@ -168,9 +169,9 @@ class LineChartView @JvmOverloads constructor(
         }
 
         // 数据点
-        val dotRadius = 8f
+        val dotRadius = 5f * density
         for ((x, y) in points) {
-            canvas.drawCircle(x, y, dotRadius + 3f, dotStrokePaint)
+            canvas.drawCircle(x, y, dotRadius + 2f * density, dotStrokePaint)
             canvas.drawCircle(x, y, dotRadius, dotPaint)
         }
 
@@ -181,7 +182,7 @@ class LineChartView @JvmOverloads constructor(
                 else chartLeft + chartWidth * i / (effectiveData.size - 1)
             val label = effectiveData[i].first
             val shortLabel = if (label.length > 5) label.take(5) + ".." else label
-            canvas.drawText(shortLabel, x, chartBottom + 36f, labelPaint)
+            canvas.drawText(shortLabel, x, chartBottom + 24f * density, labelPaint)
         }
     }
 

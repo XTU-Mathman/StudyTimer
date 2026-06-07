@@ -116,16 +116,20 @@ object CheckInStorage {
         return result
     }
 
+    private val saveLock = Any()
+
     private fun saveRecords(context: Context, records: List<CheckInRecord>) {
-        val arr = JSONArray()
-        for (r in records) {
-            val obj = JSONObject()
-            obj.put("itemId", r.itemId)
-            obj.put("date", r.date)
-            obj.put("time", r.time)
-            arr.put(obj)
+        synchronized(saveLock) {
+            val arr = JSONArray()
+            for (r in records) {
+                val obj = JSONObject()
+                obj.put("itemId", r.itemId)
+                obj.put("date", r.date)
+                obj.put("time", r.time)
+                arr.put(obj)
+            }
+            getPrefs(context).edit().putString(KEY_RECORDS, arr.toString()).commit()
         }
-        getPrefs(context).edit().putString(KEY_RECORDS, arr.toString()).apply()
     }
 
     private fun saveItems(context: Context, items: List<CheckInItem>) {

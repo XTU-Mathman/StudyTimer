@@ -416,12 +416,16 @@ object TodoStorage {
 
     // ==================== 序列化 ====================
 
+    private val saveLock = Any()
+
     private fun saveAll(context: Context, items: List<TodoItem>) {
-        val arr = JSONArray()
-        for (item in items) {
-            arr.put(serializeItem(item))
+        synchronized(saveLock) {
+            val arr = JSONArray()
+            for (item in items) {
+                arr.put(serializeItem(item))
+            }
+            getPrefs(context).edit().putString(KEY_TODOS, arr.toString()).commit()
         }
-        getPrefs(context).edit().putString(KEY_TODOS, arr.toString()).apply()
     }
 
     private fun serializeItem(item: TodoItem): JSONObject {

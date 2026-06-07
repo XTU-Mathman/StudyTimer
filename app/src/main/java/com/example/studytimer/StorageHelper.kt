@@ -18,6 +18,9 @@ object StorageHelper {
     // 存储计时记录的 key
     private const val KEY_RECORDS = "timer_records"
 
+    // 读-改-写锁
+    private val lock = Any()
+
     /**
      * 获取 SharedPreferences 实例
      */
@@ -27,52 +30,67 @@ object StorageHelper {
 
     /**
      * 保存一条计时记录
-     * @param context 上下文
-     * @param record 要保存的计时记录
      */
     fun saveRecord(context: Context, record: TimerRecord) {
-        // 1. 先从 SharedPreferences 中取出已有的记录 JSON 字符串
-        val prefs = getPrefs(context)
-        val jsonStr = prefs.getString(KEY_RECORDS, "[]") ?: "[]"
-
-        // 2. 解析为 JSONArray
-        val jsonArray = JSONArray(jsonStr)
-
-        // 3. 把新记录转成 JSONObject 并追加到数组中
-        val newRecordJson = JSONObject().apply {
-            put("subjectGroup", record.subjectGroup)
-            put("subject", record.subject)
-            put("date", record.date)
-            put("durationSeconds", record.durationSeconds)
+        synchronized(lock) {
+            val prefs = getPrefs(context)
+            val jsonStr = prefs.getString(KEY_RECORDS, "[]") ?: "[]"
+            val jsonArray = JSONArray(jsonStr)
+            val newRecordJson = JSONObject().apply {
+                put("subjectGroup", record.subjectGroup)
+                put("subject", record.subject)
+                put("date", record.date)
+                put("durationSeconds", record.durationSeconds)
+            }
+            jsonArray.put(newRecordJson)
+            prefs.edit().putString(KEY_RECORDS, jsonArray.toString()).commit()
         }
-        jsonArray.put(newRecordJson)
-
-        // 4. 写回 SharedPreferences
-        prefs.edit().putString(KEY_RECORDS, jsonArray.toString()).apply()
     }
 
     /**
      * 获取所有计时记录
-     * @param context 上下文
-     * @return 计时记录列表，按保存顺序排列
      */
     fun getAllRecords(context: Context): List<TimerRecord> {
-        val prefs = getPrefs(context)
-        val jsonStr = prefs.getString(KEY_RECORDS, "[]") ?: "[]"
-        val jsonArray = JSONArray(jsonStr)
-
-        val records = mutableListOf<TimerRecord>()
-        for (i in 0 until jsonArray.length()) {
-            val obj = jsonArray.getJSONObject(i)
-            records.add(
-                TimerRecord(
-                    subjectGroup = obj.getString("subjectGroup"),
-                    subject = obj.getString("subject"),
-                    date = obj.getString("date"),
-                    durationSeconds = obj.getLong("durationSeconds")
+        synchronized(lock) {
+            val prefs = getPrefs(context)
+            val jsonStr = prefs.getString(KEY_RECORDS, "[]") ?: "[]"
+            val jsonArray = JSONArray(jsonStr)
+            val records = mutableListOf<TimerRecord>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                records.add(
+                    TimerRecord(
+                        subjectGroup = obj.getString("subjectGroup"),
+                        subject = obj.getString("subject"),
+                        date = obj.getString("date"),
+                        durationSeconds = obj.getLong("durationSeconds")
+                    )
                 )
-            )
+            }
+            return records
         }
-        return records
+    }
+
+    /**
+     * 清理 90 天前的旧记录，防止 JSON 无限膨胀
+     */
+    fun cleanupOldRecords(context: Context) {
+        synchronized(lock) {
+            val prefs = getPrefs(context)
+            val jsonStr = prefs.getString(KEY_RECORDS, "[]") ?: "[]"
+            val jsonArray = JSONArray(jsonStr)
+            val cutoff = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(java.util.Date(System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000))
+            val filtered = JSONArray()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                if (obj.getString("date") >= cutoff) {
+                    filtered.put(obj)
+                }
+            }
+            if (filtered.length() < jsonArray.length()) {
+                prefs.edit().putString(KEY_RECORDS, filtered.toString()).commit()
+            }
+        }
     }
 }

@@ -29,6 +29,8 @@ class MainActivity : AppCompatActivity() {
             SubjectData.init(this)
             TodoStorage.resetDailyIfNeeded(this)
             TodoStorage.initStudyGoal(this)
+            // 清理 90 天前的旧记录，防止 JSON 膨胀
+            StorageHelper.cleanupOldRecords(this)
         }
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
