@@ -63,11 +63,13 @@ class TimerRunningActivity : BaseTimerActivity() {
 
         subjectGroup = intent.getStringExtra("subject_group") ?: "未分类"
         subjectName = intent.getStringExtra("subject_name") ?: "未命名"
-        circularTimer.subjectText = "$subjectGroup — $subjectName"
+        circularTimer.subjectText = "⏱ 正计时 · $subjectGroup — $subjectName"
         circularTimer.isCountdown = false
         circularTimer.timeText = "00:00:00"
         circularTimer.progress = 0f
         circularTimer.statusText = "准备开始"
+        // 显示计时模式标签
+        circularTimer.isCountdown = false
 
         loadMotto(findViewById(R.id.tv_motto))
 
@@ -118,6 +120,7 @@ class TimerRunningActivity : BaseTimerActivity() {
         if (finished) return
         finished = true
         handler.removeCallbacks(refreshRunnable)
+        playEndSound()
         val totalMillis = if (isPaused) pausedElapsedMillis
             else pausedElapsedMillis + (System.currentTimeMillis() - startTimestamp)
         val totalSeconds = totalMillis / 1000

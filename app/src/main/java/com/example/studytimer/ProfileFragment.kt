@@ -14,8 +14,11 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -29,6 +32,8 @@ class ProfileFragment : Fragment() {
     private lateinit var tvNoiseStatus: TextView
     private lateinit var tvMusicStatus: TextView
     private lateinit var tvPureModeStatus: TextView
+    private lateinit var tvStreakStatus: TextView
+    private lateinit var tvSedentaryStatus: TextView
 
     // 音乐试听播放器（类级别管理，避免泄漏）
     private var previewPlayer: android.media.MediaPlayer? = null
@@ -37,6 +42,9 @@ class ProfileFragment : Fragment() {
     private var noiseDialog: AlertDialog? = null
     private var musicDialog: AlertDialog? = null
     private var pureDialog: AlertDialog? = null
+
+    // 折叠组状态跟踪（用于 collapsible groups 优化）
+    private val collapsedGroups = mutableSetOf<String>()
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -59,6 +67,14 @@ class ProfileFragment : Fragment() {
             } else {
                 Toast.makeText(requireContext(), "添加失败，请重试", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private val importDataLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            importDataFromUri(uri)
         }
     }
 
@@ -118,11 +134,35 @@ class ProfileFragment : Fragment() {
             showAudioSettingsDialog()
         }
 
+        // 连续学习天数
+        tvStreakStatus = view.findViewById(R.id.tv_streak_status)
+        view.findViewById<View>(R.id.item_streak).setOnClickListener {
+            showStreakDetailDialog()
+        }
+
+        // 学习记录管理
+        view.findViewById<View>(R.id.item_records).setOnClickListener {
+            showRecordsDialog()
+        }
+
+        // 数据备份
+        view.findViewById<View>(R.id.item_backup).setOnClickListener {
+            showBackupDialog()
+        }
+
+        // 久坐提醒
+        tvSedentaryStatus = view.findViewById(R.id.tv_sedentary_status)
+        view.findViewById<View>(R.id.item_sedentary).setOnClickListener {
+            showSedentaryDialog()
+        }
+
         updateBgUI()
         updateCheckinStatus()
         updateNoiseUI()
         updateMusicUI()
         updatePureModeUI()
+        updateStreakStatus()
+        updateSedentaryStatus()
     }
 
     override fun onDestroyView() {
@@ -907,6 +947,715 @@ class ProfileFragment : Fragment() {
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    // ==================== 连续学习天数 ====================
+
+    private fun updateStreakStatus() {
+        val streak = calculateStreak()
+        tvStreakStatus.text = if (streak > 0) "已连续学习 $streak 天 🔥" else "今天还没有学习哦"
+    }
+
+    private fun calculateStreak(): Int {
+        val records = StorageHelper.getAllRecords(requireContext())
+        val dateSet = records.map { it.date }.toSet()
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        var streak = 0
+        val cal = Calendar.getInstance()
+        // 检查今天是否有记录
+        val todayStr = dateFormat.format(cal.time)
+        if (dateSet.contains(todayStr)) {
+            streak = 1
+            // 往前数连续天数
+            for (i in 1..365) {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+                val dateStr = dateFormat.format(cal.time)
+                if (dateSet.contains(dateStr)) {
+                    streak++
+                } else {
+                    break
+                }
+            }
+        } else {
+            // 今天没有记录，检查昨天开始的连续天数
+            cal.add(Calendar.DAY_OF_YEAR, -1)
+            for (i in 0..365) {
+                val dateStr = dateFormat.format(cal.time)
+                if (dateSet.contains(dateStr)) {
+                    streak++
+                    cal.add(Calendar.DAY_OF_YEAR, -1)
+                } else {
+                    break
+                }
+            }
+        }
+        return streak
+    }
+
+    private fun showStreakDetailDialog() {
+        val streak = calculateStreak()
+        val records = StorageHelper.getAllRecords(requireContext())
+        val totalDays = records.map { it.date }.toSet().size
+        val totalSeconds = records.sumOf { it.durationSeconds }
+        val totalHours = totalSeconds / 3600f
+
+        val msg = buildString {
+            appendLine("🔥 当前连续学习：${streak} 天")
+            appendLine()
+            appendLine("📊 总计统计")
+            appendLine("  学习天数：${totalDays} 天")
+            appendLine("  总学习时长：${"%.1f".format(totalHours)} 小时")
+            if (totalDays > 0) {
+                appendLine("  日均学习：${"%.1f".format(totalHours / totalDays)} 小时")
+            }
+            appendLine()
+            appendLine("坚持就是胜利 💪")
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("🔥 学习连续记录")
+            .setMessage(msg)
+            .setPositiveButton("好的", null)
+            .setNeutralButton("🏆 成就") { _, _ -> showAchievementDialog() }
+            .show()
+    }
+
+    // ==================== 学习记录管理 ====================
+
+    private fun showRecordsDialog() {
+        val ctx = requireContext()
+        val allRecords = StorageHelper.getAllRecords(ctx)
+        if (allRecords.isEmpty()) {
+            Toast.makeText(ctx, "暂无学习记录", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val dp = resources.displayMetrics.density
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        // 按日期分组（倒序）
+        val grouped = allRecords.groupBy { it.date }
+            .toSortedMap(compareByDescending { it })
+
+        val contentLayout = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, (8 * dp).toInt(), 0, 0)
+        }
+
+        fun refreshRecords() {
+            contentLayout.removeAllViews()
+            val currentRecords = StorageHelper.getAllRecords(ctx)
+            if (currentRecords.isEmpty()) {
+                contentLayout.addView(TextView(ctx).apply {
+                    text = "暂无学习记录"
+                    textSize = 14f
+                    setTextColor(resources.getColor(R.color.text_tertiary, null))
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(0, (24 * dp).toInt(), 0, 0)
+                })
+                return
+            }
+            val currentGrouped = currentRecords.groupBy { it.date }
+                .toSortedMap(compareByDescending { it })
+
+            for ((date, records) in currentGrouped) {
+                // 日期标题
+                val dayTotal = records.sumOf { it.durationSeconds }
+                contentLayout.addView(TextView(ctx).apply {
+                    text = "📅 $date（${formatRecordDuration(dayTotal)}）"
+                    textSize = 13f
+                    setTextColor(resources.getColor(R.color.blue_primary, null))
+                    paint.isFakeBoldText = true
+                    setPadding((12 * dp).toInt(), (12 * dp).toInt(), (12 * dp).toInt(), (6 * dp).toInt())
+                })
+
+                for (record in records) {
+                    val row = LinearLayout(ctx).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER_VERTICAL
+                        setPadding((12 * dp).toInt(), (8 * dp).toInt(), (12 * dp).toInt(), (8 * dp).toInt())
+                    }
+                    row.addView(TextView(ctx).apply {
+                        text = "${record.subjectGroup} · ${record.subject}"
+                        textSize = 14f
+                        setTextColor(resources.getColor(R.color.text_primary, null))
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    })
+                    row.addView(TextView(ctx).apply {
+                        text = formatRecordDuration(record.durationSeconds)
+                        textSize = 13f
+                        setTextColor(resources.getColor(R.color.text_secondary, null))
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply { marginEnd = (12 * dp).toInt() }
+                    })
+                    row.addView(makeBtn("删", "#FFFF6B6B") {
+                        AlertDialog.Builder(ctx)
+                            .setTitle("删除记录")
+                            .setMessage("确定删除这条 ${formatRecordDuration(record.durationSeconds)} 的记录吗？")
+                            .setPositiveButton("删除") { _, _ ->
+                                // 找到原始索引
+                                val jsonRecords = StorageHelper.getAllRecordsJson(ctx)
+                                val idx = jsonRecords.indexOfFirst {
+                                    val obj = it.second
+                                    obj.getString("date") == record.date &&
+                                        obj.getString("subjectGroup") == record.subjectGroup &&
+                                        obj.getString("subject") == record.subject &&
+                                        obj.getLong("durationSeconds") == record.durationSeconds
+                                }
+                                if (idx >= 0) {
+                                    StorageHelper.deleteRecord(ctx, jsonRecords[idx].first)
+                                }
+                                Toast.makeText(ctx, "已删除", Toast.LENGTH_SHORT).show()
+                                refreshRecords()
+                            }
+                            .setNegativeButton("取消", null)
+                            .show()
+                    })
+                    contentLayout.addView(row)
+                }
+            }
+        }
+
+        refreshRecords()
+
+        val scrollView = ScrollView(ctx).apply {
+            addView(contentLayout)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 700
+            )
+        }
+
+        AlertDialog.Builder(ctx)
+            .setTitle("📋 学习记录管理")
+            .setView(scrollView)
+            .setNegativeButton("关闭", null)
+            .show()
+    }
+
+    private fun formatRecordDuration(seconds: Long): String {
+        val h = seconds / 3600
+        val m = (seconds % 3600) / 60
+        val s = seconds % 60
+        return buildString {
+            if (h > 0) append("${h}小时")
+            if (m > 0) append("${m}分")
+            if (s > 0 || isEmpty()) append("${s}秒")
+        }
+    }
+
+    // ==================== 数据备份 ====================
+
+    private fun showBackupDialog() {
+        val ctx = requireContext()
+        AlertDialog.Builder(ctx)
+            .setTitle("📦 数据备份")
+            .setItems(arrayOf("📤 导出数据", "📥 导入数据")) { _, which ->
+                when (which) {
+                    0 -> exportData()
+                    1 -> importData()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun exportData() {
+        val ctx = requireContext()
+        try {
+            val exportJson = JSONObject()
+
+            // 1. 计时记录
+            val recordsArr = JSONArray()
+            for (record in StorageHelper.getAllRecords(ctx)) {
+                recordsArr.put(JSONObject().apply {
+                    put("subjectGroup", record.subjectGroup)
+                    put("subject", record.subject)
+                    put("date", record.date)
+                    put("durationSeconds", record.durationSeconds)
+                })
+            }
+            exportJson.put("records", recordsArr)
+
+            // 2. 科目数据
+            val prefs = ctx.getSharedPreferences("study_timer_data", android.content.Context.MODE_PRIVATE)
+            exportJson.put("subjectData", prefs.getString("subject_data", "[]"))
+            exportJson.put("todoItems", prefs.getString("todo_items", "[]"))
+
+            // 3. 个人设置
+            val profilePrefs = ctx.getSharedPreferences("study_timer_profile", android.content.Context.MODE_PRIVATE)
+            val profileJson = JSONObject()
+            profileJson.put("mottos", profilePrefs.getString("mottos", "[]"))
+            profileJson.put("checkin_items", profilePrefs.getString("checkin_items", "[]"))
+            profileJson.put("checkin_records", profilePrefs.getString("checkin_records", "[]"))
+            profileJson.put("study_goal_hours", profilePrefs.getFloat("study_goal_hours", 0f).toDouble())
+            profileJson.put("study_goal_subjects", profilePrefs.getString("study_goal_subjects", "[]"))
+            profileJson.put("study_goal_enabled", profilePrefs.getBoolean("study_goal_enabled", false))
+            exportJson.put("profile", profileJson)
+
+            // 4. 音频设置
+            val audioJson = JSONObject()
+            audioJson.put("noise_volume", profilePrefs.getInt("audio_noise_volume", 70))
+            audioJson.put("music_volume", profilePrefs.getInt("audio_music_volume", 80))
+            audioJson.put("fade_in", profilePrefs.getInt("audio_fade_in_seconds", 0))
+            exportJson.put("audio", audioJson)
+
+            // 5. 久坐提醒设置
+            val sedJson = JSONObject()
+            sedJson.put("enabled", profilePrefs.getBoolean("sedentary_enabled", false))
+            sedJson.put("minutes", profilePrefs.getInt("sedentary_minutes", 60))
+            exportJson.put("sedentary", sedJson)
+
+            // 6. 白噪音 & 纯净模式
+            val noisePrefs = ctx.getSharedPreferences("white_noise_prefs", android.content.Context.MODE_PRIVATE)
+            exportJson.put("white_noise", JSONObject().apply {
+                put("enabled", noisePrefs.getBoolean("enabled", false))
+                put("type", noisePrefs.getString("noise_type", ""))
+            })
+            val purePrefs = ctx.getSharedPreferences("pure_mode_prefs", android.content.Context.MODE_PRIVATE)
+            exportJson.put("pure_mode", purePrefs.getBoolean("enabled", false))
+
+            exportJson.put("version", "1.8")
+            exportJson.put("exportDate", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()))
+
+            // 保存到 Download 目录
+            val fileName = "StudyTimer_Backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.json"
+            val dir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            val file = java.io.File(dir, fileName)
+            file.writeText(exportJson.toString(2))
+
+            Toast.makeText(requireContext(), "✅ 已导出到 Download/$fileName", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "导出失败：${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun importData() {
+        importDataLauncher.launch("application/json")
+    }
+
+    private fun importDataFromUri(uri: Uri) {
+        val ctx = requireContext()
+        try {
+            val inputStream = ctx.contentResolver.openInputStream(uri) ?: return
+            val text = inputStream.bufferedReader().use { it.readText() }
+            val json = JSONObject(text)
+
+            AlertDialog.Builder(ctx)
+                .setTitle("📥 导入数据")
+                .setMessage("确定要导入备份数据吗？\n当前数据将被覆盖。")
+                .setPositiveButton("确定导入") { _, _ ->
+                    try {
+                        doImport(json)
+                        Toast.makeText(ctx, "✅ 导入成功！请重启应用", Toast.LENGTH_LONG).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(ctx, "导入失败：${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(ctx, "读取文件失败：${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun doImport(json: JSONObject) {
+        val ctx = requireContext()
+
+        // 1. 计时记录
+        val recordsArr = json.optJSONArray("records")
+        if (recordsArr != null) {
+            val prefs = ctx.getSharedPreferences("study_timer_data", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putString("timer_records", recordsArr.toString()).commit()
+        }
+
+        // 2. 科目 + 待办
+        val dataPrefs = ctx.getSharedPreferences("study_timer_data", android.content.Context.MODE_PRIVATE).edit()
+        json.optString("subjectData").let { if (it.isNotEmpty()) dataPrefs.putString("subject_data", it) }
+        json.optString("todoItems").let { if (it.isNotEmpty()) dataPrefs.putString("todo_items", it) }
+        dataPrefs.commit()
+
+        // 3. 个人设置
+        val profilePrefs = ctx.getSharedPreferences("study_timer_profile", android.content.Context.MODE_PRIVATE).edit()
+        json.optJSONObject("profile")?.let { p ->
+            p.optString("mottos").let { if (it.isNotEmpty()) profilePrefs.putString("mottos", it) }
+            p.optString("checkin_items").let { if (it.isNotEmpty()) profilePrefs.putString("checkin_items", it) }
+            p.optString("checkin_records").let { if (it.isNotEmpty()) profilePrefs.putString("checkin_records", it) }
+            profilePrefs.putFloat("study_goal_hours", p.optDouble("study_goal_hours", 0.0).toFloat())
+            p.optString("study_goal_subjects").let { if (it.isNotEmpty()) profilePrefs.putString("study_goal_subjects", it) }
+            profilePrefs.putBoolean("study_goal_enabled", p.optBoolean("study_goal_enabled", false))
+        }
+        json.optJSONObject("audio")?.let { a ->
+            profilePrefs.putInt("audio_noise_volume", a.optInt("noise_volume", 70))
+            profilePrefs.putInt("audio_music_volume", a.optInt("music_volume", 80))
+            profilePrefs.putInt("audio_fade_in_seconds", a.optInt("fade_in", 0))
+        }
+        json.optJSONObject("sedentary")?.let { s ->
+            profilePrefs.putBoolean("sedentary_enabled", s.optBoolean("enabled", false))
+            profilePrefs.putInt("sedentary_minutes", s.optInt("minutes", 60))
+        }
+        profilePrefs.commit()
+
+        // 4. 白噪音
+        json.optJSONObject("white_noise")?.let { n ->
+            ctx.getSharedPreferences("white_noise_prefs", android.content.Context.MODE_PRIVATE).edit()
+                .putBoolean("enabled", n.optBoolean("enabled", false))
+                .putString("noise_type", n.optString("type", ""))
+                .commit()
+        }
+
+        // 5. 纯净模式
+        json.opt("pure_mode")?.let {
+            ctx.getSharedPreferences("pure_mode_prefs", android.content.Context.MODE_PRIVATE).edit()
+                .putBoolean("enabled", json.optBoolean("pure_mode", false))
+                .commit()
+        }
+
+        // 重新加载科目数据
+        SubjectData.init(ctx)
+    }
+
+    // ==================== 久坐提醒 ====================
+
+    private fun updateSedentaryStatus() {
+        val ctx = requireContext()
+        val prefs = ctx.getSharedPreferences("study_timer_profile", android.content.Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean("sedentary_enabled", false)
+        val minutes = prefs.getInt("sedentary_minutes", 60)
+        tvSedentaryStatus.text = if (enabled) "✅ 每 ${minutes} 分钟提醒" else "未开启"
+    }
+
+    private fun showSedentaryDialog() {
+        val ctx = requireContext()
+        val prefs = ctx.getSharedPreferences("study_timer_profile", android.content.Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean("sedentary_enabled", false)
+        val currentMinutes = prefs.getInt("sedentary_minutes", 60)
+        val dp = resources.displayMetrics.density
+
+        val layout = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * dp).toInt(), (16 * dp).toInt(), (20 * dp).toInt(), (8 * dp).toInt())
+        }
+
+        // 说明文字
+        layout.addView(TextView(ctx).apply {
+            text = "开启后，每隔指定时间会通知你起身活动，防止久坐。"
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_secondary, null))
+            setPadding(0, 0, 0, (16 * dp).toInt())
+        })
+
+        // 时间选项
+        val timeOptions = intArrayOf(30, 45, 60, 90, 120)
+        val timeLabels = arrayOf("30 分钟", "45 分钟", "60 分钟", "90 分钟", "120 分钟")
+        var selectedMinutes = currentMinutes
+
+        layout.addView(TextView(ctx).apply {
+            text = "提醒间隔"
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_primary, null))
+            paint.isFakeBoldText = true
+            setPadding(0, 0, 0, (8 * dp).toInt())
+        })
+
+        val timeGroup = android.widget.RadioGroup(ctx).apply {
+            orientation = android.widget.RadioGroup.VERTICAL
+        }
+        for (i in timeOptions.indices) {
+            timeGroup.addView(android.widget.RadioButton(ctx).apply {
+                text = timeLabels[i]
+                textSize = 14f
+                id = i
+                isChecked = timeOptions[i] == currentMinutes
+                setPadding(0, (4 * dp).toInt(), 0, (4 * dp).toInt())
+            })
+        }
+        layout.addView(timeGroup)
+
+        // 学习计划提醒入口
+        val scheduleBtn = TextView(ctx).apply {
+            text = "📚 设置学习计划提醒"
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.blue_primary, null))
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, (16 * dp).toInt(), 0, 0)
+            paint.isFakeBoldText = true
+            setOnClickListener {
+                showScheduleReminderDialog()
+            }
+        }
+        layout.addView(scheduleBtn)
+
+        AlertDialog.Builder(ctx)
+            .setTitle("🧘 久坐提醒")
+            .setView(layout)
+            .setPositiveButton(if (enabled) "关闭提醒" else "开启提醒") { _, _ ->
+                if (enabled) {
+                    // 关闭
+                    prefs.edit()
+                        .putBoolean("sedentary_enabled", false)
+                        .commit()
+                    stopSedentaryReminder()
+                    Toast.makeText(ctx, "已关闭久坐提醒", Toast.LENGTH_SHORT).show()
+                } else {
+                    // 开启
+                    val checkedId = timeGroup.checkedRadioButtonId
+                    if (checkedId >= 0 && checkedId < timeOptions.size) {
+                        selectedMinutes = timeOptions[checkedId]
+                    }
+                    prefs.edit()
+                        .putBoolean("sedentary_enabled", true)
+                        .putInt("sedentary_minutes", selectedMinutes)
+                        .commit()
+                    startSedentaryReminder(selectedMinutes)
+                    Toast.makeText(ctx, "已开启：每 ${selectedMinutes} 分钟提醒", Toast.LENGTH_SHORT).show()
+                }
+                updateSedentaryStatus()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun startSedentaryReminder(minutes: Int) {
+        val ctx = requireContext()
+        val alarmManager = ctx.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(ctx, SedentaryReminderReceiver::class.java)
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            ctx, 100, intent,
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val intervalMs = minutes * 60L * 1000L
+        val triggerAt = android.os.SystemClock.elapsedRealtime() + intervalMs
+        try {
+            alarmManager.setRepeating(
+                android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                triggerAt,
+                intervalMs,
+                pendingIntent
+            )
+        } catch (e: SecurityException) {
+            // Android 12+ 需要精确闹钟权限
+            Toast.makeText(ctx, "请在系统设置中允许精确闹钟权限", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun stopSedentaryReminder() {
+        val ctx = requireContext()
+        val alarmManager = ctx.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(ctx, SedentaryReminderReceiver::class.java)
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            ctx, 100, intent,
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        alarmManager.cancel(pendingIntent)
+    }
+
+    // ==================== 成就展示 ====================
+
+    private fun showAchievementDialog() {
+        val ctx = requireContext()
+        val unlocked = AchievementStorage.getUnlocked(ctx)
+        val dp = resources.displayMetrics.density
+
+        val layout = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((16 * dp).toInt(), (12 * dp).toInt(), (16 * dp).toInt(), (8 * dp).toInt())
+        }
+
+        val progress = "${unlocked.size} / ${AchievementStorage.ALL_ACHIEVEMENTS.size}"
+        layout.addView(TextView(ctx).apply {
+            text = "已解锁：$progress"
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_primary, null))
+            paint.isFakeBoldText = true
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (12 * dp).toInt())
+        })
+
+        for (ach in AchievementStorage.ALL_ACHIEVEMENTS) {
+            val isUnlocked = ach.id in unlocked
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding((8 * dp).toInt(), (6 * dp).toInt(), (8 * dp).toInt(), (6 * dp).toInt())
+            }
+            row.addView(TextView(ctx).apply {
+                text = ach.icon
+                textSize = 20f
+                setPadding(0, 0, (8 * dp).toInt(), 0)
+            })
+            val textLayout = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            textLayout.addView(TextView(ctx).apply {
+                text = ach.name
+                textSize = 14f
+                setTextColor(resources.getColor(if (isUnlocked) R.color.text_primary else R.color.text_tertiary, null))
+                paint.isFakeBoldText = isUnlocked
+            })
+            textLayout.addView(TextView(ctx).apply {
+                text = ach.description
+                textSize = 12f
+                setTextColor(resources.getColor(R.color.text_secondary, null))
+            })
+            row.addView(textLayout)
+            row.addView(TextView(ctx).apply {
+                text = if (isUnlocked) "✅" else "🔒"
+                textSize = 16f
+                setPadding((8 * dp).toInt(), 0, 0, 0)
+            })
+            layout.addView(row)
+        }
+
+        val scrollView = ScrollView(ctx).apply {
+            addView(layout)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 700
+            )
+        }
+
+        AlertDialog.Builder(ctx)
+            .setTitle("🏆 成就系统")
+            .setView(scrollView)
+            .setPositiveButton("关闭", null)
+            .show()
+    }
+
+    // ==================== 学习计划提醒 ====================
+
+    private fun showScheduleReminderDialog() {
+        val ctx = requireContext()
+        val prefs = ctx.getSharedPreferences("study_timer_profile", android.content.Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean("schedule_enabled", false)
+        val currentHour = prefs.getInt("schedule_hour", 9)
+        val currentMinute = prefs.getInt("schedule_minute", 0)
+
+        val dp = resources.displayMetrics.density
+        val layout = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * dp).toInt(), (16 * dp).toInt(), (20 * dp).toInt(), (8 * dp).toInt())
+        }
+
+        layout.addView(TextView(ctx).apply {
+            text = "设定每天固定时间提醒开始学习，养成良好的学习习惯。"
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_secondary, null))
+            setPadding(0, 0, 0, (16 * dp).toInt())
+        })
+
+        val timeText = TextView(ctx).apply {
+            text = "⏰ ${"%02d".format(currentHour)}:${"%02d".format(currentMinute)}"
+            textSize = 28f
+            setTextColor(resources.getColor(R.color.blue_primary, null))
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, (8 * dp).toInt(), 0, (8 * dp).toInt())
+        }
+        layout.addView(timeText)
+
+        layout.addView(TextView(ctx).apply {
+            text = "点击上方时间修改"
+            textSize = 12f
+            setTextColor(resources.getColor(R.color.text_tertiary, null))
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, (16 * dp).toInt())
+        })
+
+        layout.addView(TextView(ctx).apply {
+            text = if (enabled) "✅ 已开启每日提醒" else "⏸ 提醒已关闭"
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_primary, null))
+            gravity = android.view.Gravity.CENTER
+        })
+
+        timeText.setOnClickListener {
+            android.app.TimePickerDialog(
+                ctx,
+                { _, h, m ->
+                    prefs.edit().putInt("schedule_hour", h).putInt("schedule_minute", m).apply()
+                    timeText.text = "⏰ ${"%02d".format(h)}:${"%02d".format(m)}"
+                    if (prefs.getBoolean("schedule_enabled", false)) {
+                        stopScheduleReminder()
+                        startScheduleReminder(h, m)
+                    }
+                },
+                currentHour,
+                currentMinute,
+                true
+            ).show()
+        }
+
+        AlertDialog.Builder(ctx)
+            .setTitle("📚 学习计划提醒")
+            .setView(layout)
+            .setPositiveButton(if (enabled) "关闭提醒" else "开启提醒") { _, _ ->
+                if (enabled) {
+                    prefs.edit().putBoolean("schedule_enabled", false).apply()
+                    stopScheduleReminder()
+                    Toast.makeText(ctx, "已关闭学习计划提醒", Toast.LENGTH_SHORT).show()
+                } else {
+                    val h = prefs.getInt("schedule_hour", 9)
+                    val m = prefs.getInt("schedule_minute", 0)
+                    prefs.edit().putBoolean("schedule_enabled", true).apply()
+                    startScheduleReminder(h, m)
+                    Toast.makeText(ctx, "已开启每日 ${"%02d".format(h)}:${"%02d".format(m)} 学习提醒", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun updateScheduleStatus() {
+        val ctx = requireContext()
+        val prefs = ctx.getSharedPreferences("study_timer_profile", android.content.Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean("schedule_enabled", false)
+        val hour = prefs.getInt("schedule_hour", 9)
+        val minute = prefs.getInt("schedule_minute", 0)
+        // 状态更新预留（可用于更新 UI 状态文本）
+    }
+
+    private fun startScheduleReminder(hour: Int, minute: Int) {
+        val ctx = requireContext()
+        val alarmManager = ctx.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(ctx, ScheduleStartReminderReceiver::class.java)
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            ctx, 200, intent,
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            // 如果时间已过，设为明天
+            if (before(Calendar.getInstance())) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        try {
+            alarmManager.setRepeating(
+                android.app.AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                android.app.AlarmManager.INTERVAL_DAY,
+                pendingIntent
+            )
+        } catch (e: SecurityException) {
+            Toast.makeText(ctx, "请在系统设置中允许精确闹钟权限", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun stopScheduleReminder() {
+        val ctx = requireContext()
+        val alarmManager = ctx.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(ctx, ScheduleStartReminderReceiver::class.java)
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            ctx, 200, intent,
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        alarmManager.cancel(pendingIntent)
     }
 
     private fun makeBtn(text: String, bgColor: String, onClick: () -> Unit): TextView {

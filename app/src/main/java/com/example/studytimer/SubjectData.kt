@@ -79,8 +79,22 @@ object SubjectData {
         0xFFA088B8.toInt(),  // 淡紫
         0xFFD4726A.toInt(),  // 莫兰迪红
         0xFFA8CBE3.toInt(),  // 天蓝
-        0xFFB8A882.toInt()   // 卡其
+        0xFFB8A882.toInt(),  // 卡其
+        // 扩展 10 色
+        0xFF7EB5C8.toInt(),  // 灰蓝
+        0xFF9AB8D4.toInt(),  // 浅钢蓝
+        0xFFD4AFA8.toInt(),  // 贝壳粉
+        0xFFC8BFA8.toInt(),  // 米灰
+        0xFF8FA8A0.toInt(),  // 鼠尾草
+        0xFFC09AB0.toInt(),  // 薰衣草粉
+        0xFFA8A0C0.toInt(),  // 淡灰紫
+        0xFFD0A880.toInt(),  // 杏色
+        0xFF80A8B8.toInt(),  // 灰绿蓝
+        0xFFC0A888.toInt()   // 驼色
     )
+
+    /** 获取所有可用的莫兰迪颜色（供颜色选择器使用） */
+    fun getAllMorandiColors(): IntArray = morandiPalette
 
     fun getGroupColor(groupName: String): Int {
         val group = groups.find { it.name == groupName }
@@ -103,6 +117,14 @@ object SubjectData {
             groups[idx] = group.copy(color = colorHex)
             save(context)
         }
+    }
+
+    /**
+     * 设置科目集颜色（Int 版本，颜色选择器用）
+     */
+    fun setGroupColorInt(context: Context, groupName: String, colorInt: Int) {
+        val hex = String.format("#%08X", colorInt)
+        setGroupColor(context, groupName, hex)
     }
 
     /** 获取所有科目集名称→颜色映射 */
@@ -148,6 +170,60 @@ object SubjectData {
     }
 
     /**
+     * 上移科目集
+     */
+    fun moveGroupUp(context: Context, name: String) {
+        val idx = groups.indexOfFirst { it.name == name }
+        if (idx > 0) {
+            val tmp = groups[idx]
+            groups[idx] = groups[idx - 1]
+            groups[idx - 1] = tmp
+            save(context)
+        }
+    }
+
+    /**
+     * 下移科目集
+     */
+    fun moveGroupDown(context: Context, name: String) {
+        val idx = groups.indexOfFirst { it.name == name }
+        if (idx in 0 until groups.size - 1) {
+            val tmp = groups[idx]
+            groups[idx] = groups[idx + 1]
+            groups[idx + 1] = tmp
+            save(context)
+        }
+    }
+
+    /**
+     * 上移科目
+     */
+    fun moveSubjectUp(context: Context, groupName: String, subjectName: String) {
+        val group = groups.find { it.name == groupName } ?: return
+        val idx = group.subjects.indexOf(subjectName)
+        if (idx > 0) {
+            val tmp = group.subjects[idx]
+            group.subjects[idx] = group.subjects[idx - 1]
+            group.subjects[idx - 1] = tmp
+            save(context)
+        }
+    }
+
+    /**
+     * 下移科目
+     */
+    fun moveSubjectDown(context: Context, groupName: String, subjectName: String) {
+        val group = groups.find { it.name == groupName } ?: return
+        val idx = group.subjects.indexOf(subjectName)
+        if (idx in 0 until group.subjects.size - 1) {
+            val tmp = group.subjects[idx]
+            group.subjects[idx] = group.subjects[idx + 1]
+            group.subjects[idx + 1] = tmp
+            save(context)
+        }
+    }
+
+    /**
      * 向指定科目集添加科目
      */
     fun addSubject(context: Context, groupName: String, subjectName: String) {
@@ -156,6 +232,19 @@ object SubjectData {
         if (group.subjects.contains(subjectName)) return  // 不能重名
         group.subjects.add(subjectName)
         save(context)
+    }
+
+    /**
+     * 重命名科目
+     */
+    fun renameSubject(context: Context, groupName: String, oldName: String, newName: String) {
+        if (newName.isBlank()) return
+        val group = groups.find { it.name == groupName } ?: return
+        val idx = group.subjects.indexOf(oldName)
+        if (idx >= 0) {
+            group.subjects[idx] = newName
+            save(context)
+        }
     }
 
     /**

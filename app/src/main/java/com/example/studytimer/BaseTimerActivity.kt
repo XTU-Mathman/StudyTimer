@@ -121,6 +121,13 @@ abstract class BaseTimerActivity : AppCompatActivity() {
         stopMusic()
     }
 
+    /** 播放计时结束音效 */
+    protected fun playEndSound() {
+        try {
+            EndSoundPlayer.play(this)
+        } catch (_: Exception) {}
+    }
+
     // ==================== 格言 ====================
 
     protected fun loadMotto(tvMotto: TextView) {

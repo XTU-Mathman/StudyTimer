@@ -72,6 +72,40 @@ object StorageHelper {
     }
 
     /**
+     * 删除一条计时记录（按索引）
+     */
+    fun deleteRecord(context: Context, index: Int) {
+        synchronized(lock) {
+            val prefs = getPrefs(context)
+            val jsonStr = prefs.getString(KEY_RECORDS, "[]") ?: "[]"
+            val jsonArray = JSONArray(jsonStr)
+            if (index in 0 until jsonArray.length()) {
+                val filtered = JSONArray()
+                for (i in 0 until jsonArray.length()) {
+                    if (i != index) filtered.put(jsonArray.getJSONObject(i))
+                }
+                prefs.edit().putString(KEY_RECORDS, filtered.toString()).commit()
+            }
+        }
+    }
+
+    /**
+     * 获取所有原始 JSON 记录（含 index，供管理页使用）
+     */
+    fun getAllRecordsJson(context: Context): List<Pair<Int, JSONObject>> {
+        synchronized(lock) {
+            val prefs = getPrefs(context)
+            val jsonStr = prefs.getString(KEY_RECORDS, "[]") ?: "[]"
+            val jsonArray = JSONArray(jsonStr)
+            val result = mutableListOf<Pair<Int, JSONObject>>()
+            for (i in 0 until jsonArray.length()) {
+                result.add(i to jsonArray.getJSONObject(i))
+            }
+            return result
+        }
+    }
+
+    /**
      * 清理 90 天前的旧记录，防止 JSON 无限膨胀
      */
     fun cleanupOldRecords(context: Context) {

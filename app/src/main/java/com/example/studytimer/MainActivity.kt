@@ -1,9 +1,14 @@
 package com.example.studytimer
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 /**
  * 主活动：管理底部导航栏和四个页面的切换
@@ -31,6 +36,13 @@ class MainActivity : AppCompatActivity() {
             TodoStorage.initStudyGoal(this)
             // 清理 90 天前的旧记录，防止 JSON 膨胀
             StorageHelper.cleanupOldRecords(this)
+            // 创建久坐提醒通知渠道
+            SedentaryReminderReceiver.createChannel(this)
+            ScheduleStartReminderReceiver.createChannel(this)
+            // 检查成就解锁
+            checkNewAchievements()
+            // 每日首次打开显示复盘
+            showDailySummaryIfNeeded()
         }
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
@@ -102,5 +114,86 @@ class MainActivity : AppCompatActivity() {
 
         transaction.commit()
         activeFragment = target
+    }
+
+    // ==================== 成就检查 ====================
+
+    private fun checkNewAchievements() {
+        val newly = AchievementStorage.checkAndUnlock(this)
+        if (newly.isNotEmpty()) {
+            val msg = newly.joinToString("\n") { "${it.icon} ${it.name}：${it.description}" }
+            AlertDialog.Builder(this)
+                .setTitle("🎉 新成就解锁！")
+                .setMessage(msg)
+                .setPositiveButton("太棒了！", null)
+                .show()
+        }
+    }
+
+    // ==================== 每日复盘 ====================
+
+    private fun showDailySummaryIfNeeded() {
+        val prefs = getSharedPreferences("study_timer_profile", MODE_PRIVATE)
+        val lastSummaryDate = prefs.getString("last_summary_date", "")
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            .format(Calendar.getInstance().time)
+        if (lastSummaryDate == today) return // 今天已显示过
+
+        val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+        val yesterdayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(yesterdayCal.time)
+        val records = StorageHelper.getAllRecords(this).filter { it.date == yesterdayStr }
+        if (records.isEmpty()) return // 昨天没有记录
+
+        prefs.edit().putString("last_summary_date", today).apply()
+
+        val totalSec = records.sumOf { it.durationSeconds }
+        val h = totalSec / 3600; val m = (totalSec % 3600) / 60
+        val grouped = records.groupBy { it.subjectGroup }
+        val details = grouped.map { (g, rs) ->
+            val sh = rs.sumOf { it.durationSeconds } / 3600f
+            "$g ${"%.1f".format(sh)}h"
+        }
+
+        val streak = calculateStreak()
+        val msg = buildString {
+            appendLine("📅 昨日学习回顾")
+            appendLine()
+            appendLine("⏱ 总时长：${h}小时${m}分")
+            appendLine("📚 科目：${details.joinToString("、")}")
+            if (streak > 0) appendLine("🔥 连续学习：${streak} 天")
+            appendLine()
+            append("今天也要加油哦 💪")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("📊 昨日总结")
+            .setMessage(msg)
+            .setPositiveButton("开始今天的学习", null)
+            .show()
+    }
+
+    private fun calculateStreak(): Int {
+        val records = StorageHelper.getAllRecords(this)
+        val dateSet = records.map { it.date }.toSet()
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        var streak = 0
+        val cal = Calendar.getInstance()
+        val todayStr = dateFormat.format(cal.time)
+        if (dateSet.contains(todayStr)) {
+            streak = 1
+            for (i in 1..365) {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+                if (dateSet.contains(dateFormat.format(cal.time))) streak++
+                else break
+            }
+        } else {
+            cal.add(Calendar.DAY_OF_YEAR, -1)
+            for (i in 0..365) {
+                val ds = dateFormat.format(cal.time)
+                if (dateSet.contains(ds)) { streak++; cal.add(Calendar.DAY_OF_YEAR, -1) }
+                else break
+            }
+        }
+        return streak
     }
 }

@@ -134,6 +134,9 @@ class PomodoroRunningActivity : BaseTimerActivity() {
         circularTimer.arcColors = intArrayOf(
             0xFFD4726A.toInt(), 0xFFC496A8.toInt(), 0xFFA088B8.toInt()
         )
+        // 背景色调为暖色
+        val bgView = findViewById<com.example.studytimer.DynamicBackgroundView>(R.id.iv_background)
+        if (bgView != null) bgView.visibility = View.GONE
 
         handler.post(refreshRunnable)
     }
@@ -148,12 +151,16 @@ class PomodoroRunningActivity : BaseTimerActivity() {
         circularTimer.isCountdown = true
         circularTimer.timeText = formatMillis(targetMillis)
         circularTimer.progress = 1f
-        val label = if (isLong) "🌿 长休息" else "☕ 短休息"
-        circularTimer.statusText = "$label · 第 $currentRound/$totalRounds 轮"
-        // 休息时用绿色调
+        val icon = if (isLong) "🌿" else "☕"
+        val label = if (isLong) "长休息" else "短休息"
+        circularTimer.subjectText = "$icon 休息时间 · 第 $currentRound/$totalRounds 轮"
+        circularTimer.statusText = "$icon $label · 放松一下"
+        // 休息时用绿色调 + 更醒目的标题
         circularTimer.arcColors = intArrayOf(
             0xFF6DB89A.toInt(), 0xFF6BA8A8.toInt(), 0xFF8B82B8.toInt()
         )
+        // 振动提示休息开始
+        vibrate(200)
 
         handler.post(refreshRunnable)
     }
@@ -161,11 +168,14 @@ class PomodoroRunningActivity : BaseTimerActivity() {
     private fun onPhaseComplete() {
         handler.removeCallbacks(refreshRunnable)
         vibrate(300)
+        playEndSound()
 
         if (isWorkPhase) {
             // 专注结束 → 记录时长
             totalWorkSeconds += workMinutes * 60L
             savePartialRecord(workMinutes * 60L)
+            // 统计番茄钟数量（成就系统用）
+            AchievementStorage.addPomodoroCount(this, 1)
 
             if (currentRound >= totalRounds) {
                 // 全部完成

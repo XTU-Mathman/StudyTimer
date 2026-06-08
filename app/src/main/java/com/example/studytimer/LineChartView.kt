@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 
@@ -68,6 +69,23 @@ class LineChartView @JvmOverloads constructor(
     private val marginRight = 12f * density
     private val marginTop = 32f * density
     private val marginBottom = 40f * density
+
+    // 触摸交互
+    private var touchedIndex = -1
+    private var touchX = 0f
+    private var touchY = 0f
+    private val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FF6BA4D1")
+        style = Paint.Style.FILL
+    }
+    private val highlightTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = 12f * resources.displayMetrics.scaledDensity
+        color = Color.WHITE
+        textAlign = Paint.Align.CENTER
+    }
+
+    private var cachedPoints = mutableListOf<Pair<Float, Float>>()
+    private var cachedData = mutableListOf<Pair<String, Long>>()
 
     fun setData(items: List<Pair<String, Long>>, animate: Boolean = true) {
         data = items
@@ -134,6 +152,8 @@ class LineChartView @JvmOverloads constructor(
             val y = chartBottom - (effectiveData[i].second.toFloat() / yMax * chartHeight)
             points.add(x to y)
         }
+        cachedPoints = points.toMutableList()
+        cachedData = effectiveData.toMutableList()
 
         if (points.isEmpty()) return
 
@@ -170,9 +190,51 @@ class LineChartView @JvmOverloads constructor(
 
         // 数据点
         val dotRadius = 5f * density
-        for ((x, y) in points) {
-            canvas.drawCircle(x, y, dotRadius + 2f * density, dotStrokePaint)
-            canvas.drawCircle(x, y, dotRadius, dotPaint)
+        points.forEachIndexed { i, (px, py) ->
+            if (i == touchedIndex) {
+                // 高亮选中的点
+                highlightPaint.color = Color.parseColor("#FF6BA4D1")
+                canvas.drawCircle(px, py, dotRadius + 4f * density, highlightPaint)
+                // 白色描边
+                dotStrokePaint.strokeWidth = 3f * density
+                canvas.drawCircle(px, py, dotRadius + 6f * density, dotStrokePaint)
+            } else {
+                canvas.drawCircle(px, py, dotRadius + 2f * density, dotStrokePaint)
+                canvas.drawCircle(px, py, dotRadius, dotPaint)
+            }
+        }
+
+        // 绘制选中标签
+        if (touchedIndex in points.indices) {
+            val (tx, ty) = points[touchedIndex]
+            val label = effectiveData[touchedIndex].first
+            val value = effectiveData[touchedIndex].second
+            val hh = value / 3600; val mm = (value % 3600) / 60
+            val text = "$label\n${hh}时${mm}分"
+
+            // 背景框
+            val bgRect = android.graphics.RectF()
+            val tempPaint = Paint().apply { textSize = highlightTextPaint.textSize }
+            val lines = text.split("\n")
+            val maxW = lines.maxOf { tempPaint.measureText(it) } + 16f * density
+            val bgH = lines.size * (highlightTextPaint.textSize + 4f * density) + 8f * density
+
+            var bgX = tx - maxW / 2f
+            val bgY = ty - 45f * density
+            if (bgX < 4f * density) bgX = 4f * density
+            if (bgX + maxW > width - 4f * density) bgX = width - maxW - 4f * density
+
+            bgRect.set(bgX, bgY, bgX + maxW, bgY + bgH)
+            highlightPaint.color = 0xDD1C1917.toInt()
+            canvas.drawRoundRect(bgRect, 8f * density, 8f * density, highlightPaint)
+
+            // 文字
+            highlightTextPaint.color = Color.WHITE
+            var lineY = bgY + highlightTextPaint.textSize + 6f * density
+            for (line in lines) {
+                canvas.drawText(line, bgX + maxW / 2f, lineY, highlightTextPaint)
+                lineY += highlightTextPaint.textSize + 4f * density
+            }
         }
 
         // X 轴标签
@@ -184,6 +246,39 @@ class LineChartView @JvmOverloads constructor(
             val shortLabel = if (label.length > 5) label.take(5) + ".." else label
             canvas.drawText(shortLabel, x, chartBottom + 24f * density, labelPaint)
         }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (cachedPoints.isEmpty() || data.isEmpty()) return false
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                val ex = event.x
+                val ey = event.y
+                // 找最近的数据点
+                var minDist = 100f * density
+                var nearest = -1
+                cachedPoints.forEachIndexed { i, (px, py) ->
+                    val dist = Math.sqrt(((ex - px) * (ex - px) + (ey - py) * (ey - py)).toDouble()).toFloat()
+                    if (dist < minDist) {
+                        minDist = dist
+                        nearest = i
+                    }
+                }
+                if (nearest >= 0 && nearest != touchedIndex) {
+                    touchedIndex = nearest
+                    invalidate()
+                }
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                // 延迟取消选中
+                postDelayed({
+                    touchedIndex = -1
+                    invalidate()
+                }, 2000)
+            }
+        }
+        return true
     }
 
     private fun niceMax(maxSeconds: Long): Long {

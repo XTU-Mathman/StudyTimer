@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.example.studytimer.CalendarDetailView
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -35,10 +36,13 @@ class StatsFragment : Fragment() {
     private lateinit var chartLineContainer: LinearLayout
     private lateinit var chartHeatmapContainer: LinearLayout
     private lateinit var chartCompareContainer: LinearLayout
+    private lateinit var chartCalendarContainer: LinearLayout
+    private lateinit var tvCalendarDetail: TextView
     private lateinit var pieChart: PieChartView
     private lateinit var lineChart: LineChartView
     private var heatmapView: HeatmapCalendarView? = null
     private var compareView: CompareBarView? = null
+    private var calendarDetailView: CalendarDetailView? = null
 
     // ==================== 状态 ====================
     private var currentMode = "day"  // 当前模式：day / week / month
@@ -69,6 +73,8 @@ class StatsFragment : Fragment() {
         chartLineContainer = view.findViewById(R.id.chart_line_container)
         chartHeatmapContainer = view.findViewById(R.id.chart_heatmap_container)
         chartCompareContainer = view.findViewById(R.id.chart_compare_container)
+        chartCalendarContainer = view.findViewById(R.id.chart_calendar_container)
+        tvCalendarDetail = view.findViewById(R.id.tv_calendar_detail)
 
         // ---------- 2. 创建图表控件并添加到容器 ----------
         // 扇形图（所有模式都显示）
@@ -127,6 +133,8 @@ class StatsFragment : Fragment() {
         chartPieContainer.visibility = if (mode != "year") View.VISIBLE else View.GONE
         // 热力图：仅年模式显示
         chartHeatmapContainer.visibility = if (mode == "year") View.VISIBLE else View.GONE
+        // 日历视图：仅年模式显示
+        chartCalendarContainer.visibility = if (mode == "year") View.VISIBLE else View.GONE
         // 对比图：周/月模式显示
         chartCompareContainer.visibility = if (mode == "week" || mode == "month") View.VISIBLE else View.GONE
         // 日期导航：年模式隐藏
@@ -208,6 +216,22 @@ class StatsFragment : Fragment() {
             }
             heatmapView!!.setData(dailyMinutes)
 
+            // 交互式日历（年模式）
+            chartCalendarContainer.removeAllViews()
+            calendarDetailView = CalendarDetailView(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                setData(dailyMinutes)
+                setMonth(Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH))
+                onDateSelected = { date, minutes ->
+                    tvCalendarDetail.visibility = View.VISIBLE
+                    tvCalendarDetail.text = "$date  学习 ${minutes} 分钟（${formatDuration(minutes * 60L)}）"
+                }
+            }
+            chartCalendarContainer.addView(calendarDetailView)
+
             val totalYearSeconds = allRecords.sumOf { it.durationSeconds }
             tvTotalDuration.text = "年度总计：${formatDuration(totalYearSeconds)}"
 
@@ -246,8 +270,6 @@ class StatsFragment : Fragment() {
         val totalSeconds = sortedEntries.sumOf { it.value }
         tvTotalDuration.text = "总计：${formatDuration(totalSeconds)}"
 
-        // 7. 清空旧列表，重新填充
-        layoutStatsList.removeAllViews()
         // 7. 清空旧列表，重新填充
         layoutStatsList.removeAllViews()
 
@@ -473,6 +495,13 @@ class StatsFragment : Fragment() {
         barContainer.addView(bar)
         row.addView(barContainer)
 
+        // 点击整行 → 显示该科目每日详情
+        row.isClickable = true
+        row.isFocusable = true
+        row.setOnClickListener {
+            showSubjectDetailDialog(name, seconds)
+        }
+
         return row
     }
 
@@ -566,5 +595,42 @@ class StatsFragment : Fragment() {
             result["${parts[0]}年${parts[1].toInt()}月"] = value
         }
         return result
+    }
+
+    /**
+     * 显示科目每日详情弹窗（点击统计行触发）
+     */
+    private fun showSubjectDetailDialog(name: String, seconds: Long) {
+        val allRecords = StorageHelper.getAllRecords(requireContext())
+        val filteredRecords = if (currentMode == "year") allRecords else filterRecords(allRecords)
+
+        // 按日期筛选该科目的记录
+        val subjectRecords = filteredRecords.filter { record ->
+            "${record.subjectGroup} - ${record.subject}" == name
+        }
+
+        val dayMap = mutableMapOf<String, Long>()  // date -> seconds
+        for (r in subjectRecords) {
+            dayMap[r.date] = (dayMap[r.date] ?: 0) + r.durationSeconds
+        }
+        val sortedDays = dayMap.entries.sortedBy { it.key }
+
+        val sb = StringBuilder()
+        sb.appendLine("📖 $name")
+        sb.appendLine("总计：${formatDuration(seconds)}")
+        sb.appendLine("————————————")
+        if (sortedDays.isEmpty()) {
+            sb.appendLine("暂无每日记录")
+        } else {
+            for ((date, secs) in sortedDays) {
+                sb.appendLine("$date  ${formatDuration(secs)}")
+            }
+        }
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("科目详情")
+            .setMessage(sb.toString())
+            .setPositiveButton("关闭", null)
+            .show()
     }
 }

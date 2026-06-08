@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -273,11 +275,19 @@ class TimerFragment : Fragment() {
     private fun showGroupManageDialog() {
         AlertDialog.Builder(requireContext())
             .setTitle("科目集管理")
-            .setItems(arrayOf("➕ 新增科目集", "🗑 删除科目集", "✏️ 重命名科目集")) { _, which ->
+            .setItems(arrayOf(
+                "➕ 新增科目集",
+                "🗑 删除科目集",
+                "✏️ 重命名科目集",
+                "🎨 设置颜色",
+                "↕️ 调整顺序"
+            )) { _, which ->
                 when (which) {
                     0 -> showGroupAddDialog()
                     1 -> showGroupDeleteDialog()
                     2 -> showGroupRenameDialog()
+                    3 -> showGroupColorDialog()
+                    4 -> showGroupReorderDialog()
                 }
             }
             .setNegativeButton("取消", null)
@@ -368,10 +378,17 @@ class TimerFragment : Fragment() {
         val groupName = getSelectedGroup()
         AlertDialog.Builder(requireContext())
             .setTitle("「$groupName」科目管理")
-            .setItems(arrayOf("➕ 新增科目", "🗑 删除科目")) { _, which ->
+            .setItems(arrayOf(
+                "➕ 新增科目",
+                "🗑 删除科目",
+                "✏️ 重命名科目",
+                "↕️ 调整顺序"
+            )) { _, which ->
                 when (which) {
                     0 -> showSubjectAddDialog(groupName)
                     1 -> showSubjectDeleteDialog(groupName)
+                    2 -> showSubjectRenameDialog(groupName)
+                    3 -> showSubjectReorderDialog(groupName)
                 }
             }
             .setNegativeButton("取消", null)
@@ -421,5 +438,315 @@ class TimerFragment : Fragment() {
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    // ==================== 科目集颜色选择 ====================
+
+    private fun showGroupColorDialog() {
+        val names = SubjectData.getGroupNames()
+        if (names.isEmpty()) {
+            Toast.makeText(requireContext(), "暂无科目集", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择要设置颜色的科目集")
+            .setItems(names.toTypedArray()) { _, which ->
+                showColorPickerDialog(names[which])
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showColorPickerDialog(groupName: String) {
+        val ctx = requireContext()
+        val dp = resources.displayMetrics.density
+        val colors = SubjectData.getAllMorandiColors()
+        val currentColor = SubjectData.getGroupColor(groupName)
+
+        val layout = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * dp).toInt(), (16 * dp).toInt(), (20 * dp).toInt(), (8 * dp).toInt())
+        }
+
+        layout.addView(TextView(ctx).apply {
+            text = "「$groupName」当前颜色"
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_secondary, null))
+            setPadding(0, 0, 0, (12 * dp).toInt())
+        })
+
+        // 当前颜色预览
+        val previewRow = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, (16 * dp).toInt())
+        }
+        previewRow.addView(View(ctx).apply {
+            setBackgroundColor(currentColor)
+            layoutParams = LinearLayout.LayoutParams((32 * dp).toInt(), (32 * dp).toInt()).apply {
+                marginEnd = (12 * dp).toInt()
+            }
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(currentColor)
+                cornerRadius = 100f * dp
+            }
+        })
+        previewRow.addView(TextView(ctx).apply {
+            text = String.format("#%06X", 0xFFFFFF and currentColor)
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_primary, null))
+        })
+        layout.addView(previewRow)
+
+        // 颜色网格
+        val gridLayout = android.widget.GridLayout(ctx).apply {
+            columnCount = 5
+            rowCount = (colors.size + 4) / 5
+        }
+
+        var selectedColor = currentColor
+        val colorViews = mutableListOf<View>()
+
+        for (color in colors) {
+            val colorCircle = View(ctx).apply {
+                val bg = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(color)
+                    cornerRadius = 100f * dp
+                    if (color == currentColor) {
+                        setStroke((2 * dp).toInt(), 0xFFFFFFFF.toInt())
+                    }
+                }
+                background = bg
+                layoutParams = android.widget.GridLayout.LayoutParams().apply {
+                    width = (40 * dp).toInt()
+                    height = (40 * dp).toInt()
+                    setMargins((6 * dp).toInt(), (6 * dp).toInt(), (6 * dp).toInt(), (6 * dp).toInt())
+                }
+                setOnClickListener {
+                    // 重置所有边框
+                    for (v in colorViews) {
+                        (v.background as? android.graphics.drawable.GradientDrawable)?.setStroke(0, 0)
+                    }
+                    // 选中当前
+                    (background as? android.graphics.drawable.GradientDrawable)?.setStroke(
+                        (2 * dp).toInt(), 0xFFFFFFFF.toInt()
+                    )
+                    selectedColor = color
+                }
+            }
+            colorViews.add(colorCircle)
+            gridLayout.addView(colorCircle)
+        }
+        layout.addView(gridLayout)
+
+        AlertDialog.Builder(ctx)
+            .setTitle("🎨 设置颜色")
+            .setView(layout)
+            .setPositiveButton("确定") { _, _ ->
+                SubjectData.setGroupColorInt(ctx, groupName, selectedColor)
+                Toast.makeText(ctx, "「$groupName」颜色已更新", Toast.LENGTH_SHORT).show()
+                refreshGroupChips()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    // ==================== 科目集排序 ====================
+
+    private fun showGroupReorderDialog() {
+        val names = SubjectData.getGroupNames().toMutableList()
+        if (names.size < 2) {
+            Toast.makeText(requireContext(), "至少需要 2 个科目集才能排序", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val ctx = requireContext()
+        val dp = resources.displayMetrics.density
+        val layout = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, (8 * dp).toInt(), 0, 0)
+        }
+
+        fun refresh() {
+            layout.removeAllViews()
+            val currentNames = SubjectData.getGroupNames()
+            for ((i, name) in currentNames.withIndex()) {
+                val row = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding((16 * dp).toInt(), (8 * dp).toInt(), (16 * dp).toInt(), (8 * dp).toInt())
+                }
+
+                // 颜色圆点
+                row.addView(View(ctx).apply {
+                    setBackgroundColor(SubjectData.getGroupColor(name))
+                    layoutParams = LinearLayout.LayoutParams((10 * dp).toInt(), (10 * dp).toInt()).apply {
+                        marginEnd = (10 * dp).toInt()
+                    }
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(SubjectData.getGroupColor(name))
+                        cornerRadius = 100f * dp
+                    }
+                })
+
+                // 名称
+                row.addView(TextView(ctx).apply {
+                    text = name
+                    textSize = 15f
+                    setTextColor(resources.getColor(R.color.text_primary, null))
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                })
+
+                // 上移按钮
+                if (i > 0) {
+                    row.addView(makeSmallBtn("▲") {
+                        SubjectData.moveGroupUp(ctx, name)
+                        refreshGroupChips()
+                        refresh()
+                    })
+                } else {
+                    row.addView(makeSmallBtn("　") {})
+                }
+
+                // 下移按钮
+                if (i < currentNames.size - 1) {
+                    row.addView(makeSmallBtn("▼") {
+                        SubjectData.moveGroupDown(ctx, name)
+                        refreshGroupChips()
+                        refresh()
+                    })
+                } else {
+                    row.addView(makeSmallBtn("　") {})
+                }
+
+                layout.addView(row)
+            }
+        }
+        refresh()
+
+        AlertDialog.Builder(ctx)
+            .setTitle("↕️ 调整科目集顺序")
+            .setView(layout)
+            .setPositiveButton("完成", null)
+            .show()
+    }
+
+    // ==================== 科目重命名 ====================
+
+    private fun showSubjectRenameDialog(groupName: String) {
+        val subjects = SubjectData.getSubjectsByGroup(groupName)
+        if (subjects.isEmpty()) {
+            Toast.makeText(requireContext(), "该科目集下暂无科目", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择要重命名的科目")
+            .setItems(subjects.toTypedArray()) { _, which ->
+                val oldName = subjects[which]
+                val input = EditText(requireContext()).apply {
+                    setText(oldName)
+                    hint = "输入新名称"
+                    setPadding(32, 16, 32, 16)
+                }
+                AlertDialog.Builder(requireContext())
+                    .setTitle("重命名「$oldName」")
+                    .setView(input)
+                    .setPositiveButton("确定") { _, _ ->
+                        val newName = input.text.toString().trim()
+                        if (newName.isNotEmpty() && newName != oldName) {
+                            SubjectData.renameSubject(requireContext(), groupName, oldName, newName)
+                            refreshSubjectChips(groupName)
+                            Toast.makeText(requireContext(), "已重命名为「$newName」", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    // ==================== 科目排序 ====================
+
+    private fun showSubjectReorderDialog(groupName: String) {
+        val subjects = SubjectData.getSubjectsByGroup(groupName).toMutableList()
+        if (subjects.size < 2) {
+            Toast.makeText(requireContext(), "至少需要 2 个科目才能排序", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val ctx = requireContext()
+        val dp = resources.displayMetrics.density
+        val container = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, (8 * dp).toInt(), 0, 0)
+        }
+
+        buildSubjectReorderList(ctx, dp, container, groupName)
+
+        AlertDialog.Builder(ctx)
+            .setTitle("↕️ 调整「$groupName」科目顺序")
+            .setView(container)
+            .setPositiveButton("完成", null)
+            .show()
+    }
+
+    private fun buildSubjectReorderList(
+        ctx: android.content.Context,
+        dp: Float,
+        container: LinearLayout,
+        groupName: String
+    ) {
+        container.removeAllViews()
+        val currentSubjects = SubjectData.getSubjectsByGroup(groupName)
+        for ((i, name) in currentSubjects.withIndex()) {
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding((16 * dp).toInt(), (8 * dp).toInt(), (16 * dp).toInt(), (8 * dp).toInt())
+            }
+
+            row.addView(TextView(ctx).apply {
+                text = name
+                textSize = 15f
+                setTextColor(resources.getColor(R.color.text_primary, null))
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+
+            if (i > 0) {
+                row.addView(makeSmallBtn("▲") {
+                    SubjectData.moveSubjectUp(ctx, groupName, name)
+                    refreshSubjectChips(groupName)
+                    buildSubjectReorderList(ctx, dp, container, groupName)
+                })
+            } else {
+                row.addView(makeSmallBtn("　") {})
+            }
+
+            if (i < currentSubjects.size - 1) {
+                row.addView(makeSmallBtn("▼") {
+                    SubjectData.moveSubjectDown(ctx, groupName, name)
+                    refreshSubjectChips(groupName)
+                    buildSubjectReorderList(ctx, dp, container, groupName)
+                })
+            } else {
+                row.addView(makeSmallBtn("　") {})
+            }
+
+            container.addView(row)
+        }
+    }
+
+    /** 小按钮工具方法（排序用） */
+    private fun makeSmallBtn(text: String, onClick: () -> Unit): android.widget.TextView {
+        val ctx = requireContext()
+        return android.widget.TextView(ctx).apply {
+            this.text = text
+            textSize = 16f
+            setTextColor(resources.getColor(R.color.blue_primary, null))
+            gravity = android.view.Gravity.CENTER
+            setPadding(16, 8, 16, 8)
+            setOnClickListener { onClick() }
+        }
     }
 }

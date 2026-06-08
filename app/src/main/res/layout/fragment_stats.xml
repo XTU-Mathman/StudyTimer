@@ -199,6 +199,18 @@
                     android:padding="12dp"
                     android:visibility="gone" />
 
+                <!-- 日历视图（年模式） -->
+                <LinearLayout
+                    android:id="@+id/chart_calendar_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_glass"
+                    android:elevation="2dp"
+                    android:layout_marginBottom="12dp"
+                    android:padding="12dp"
+                    android:visibility="gone" />
+
                 <!-- 对比图（周/月模式） -->
                 <LinearLayout
                     android:id="@+id/chart_compare_container"
@@ -229,6 +241,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
+
+                <!-- 日历选中结果 -->
+                <TextView
+                    android:id="@+id/tv_calendar_detail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:textSize="14sp"
+                    android:textColor="@color/blue_primary"
+                    android:gravity="center"
+                    android:visibility="gone" />
 
             </LinearLayout>
 

@@ -75,7 +75,7 @@ class CountdownRunningActivity : BaseTimerActivity() {
         targetMillis = totalMinutes * 60L * 1000L
         pausedRemaining = targetMillis
 
-        circularTimer.subjectText = "$subjectGroup — $subjectName"
+        circularTimer.subjectText = "⏳ 倒计时 · $subjectGroup — $subjectName"
         circularTimer.isCountdown = true
         circularTimer.timeText = formatMillis(targetMillis)
         circularTimer.progress = 1f
@@ -130,6 +130,7 @@ class CountdownRunningActivity : BaseTimerActivity() {
         isFinished = true
         handler.removeCallbacks(refreshRunnable)
         vibrate(500)
+        playEndSound()
         saveRecord(targetMillis / 1000)
         TodoStorage.checkAndUpdateStudyGoal(this)
         Toast.makeText(this, "⏰ 时间到！", Toast.LENGTH_LONG).show()
